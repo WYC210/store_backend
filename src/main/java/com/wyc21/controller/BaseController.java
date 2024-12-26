@@ -5,6 +5,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import com.wyc21.service.ex.ServiceException;
 import com.wyc21.util.JsonResult;
 
+import jakarta.servlet.http.HttpSession;
+
 import com.wyc21.service.ex.UsernameDuplicatedException;
 import com.wyc21.service.ex.InsertException;
 import com.wyc21.service.ex.UserNotFoundException;
@@ -34,6 +36,14 @@ public class BaseController {
             result.setMessage("注册时发生未知错误");
         }
         return result;
+    }
+    // 从HttpSession对象中获取uid   
+    protected final Integer getuidFromSession(HttpSession session) {
+        return Integer.valueOf(session.getAttribute("uid").toString());
+    }
+    // 从HttpSession对象中获取username
+    protected final String getUsernameFromSession(HttpSession session) {
+        return session.getAttribute("username").toString();
     }
 }
 
