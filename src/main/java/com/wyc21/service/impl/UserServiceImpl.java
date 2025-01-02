@@ -12,12 +12,20 @@ import com.wyc21.service.ex.InsertException;
 import com.wyc21.service.ex.UsernameDuplicatedException;
 import com.wyc21.service.ex.UserNotFoundException;
 import com.wyc21.service.ex.PasswordNotMatchException;
+import com.wyc21.util.JwtUtil;
+import com.wyc21.util.RedisUtil;
 
 @Service
 public class UserServiceImpl implements IUserService {
 
     @Autowired
     private UserMapper userMapper;
+
+    @Autowired
+    private JwtUtil jwtUtil;
+
+    @Autowired
+    private RedisUtil redisUtil;
 
     @Override
     public void reg(User user) {
@@ -38,6 +46,7 @@ public class UserServiceImpl implements IUserService {
         Date date = new Date();
         user.setCreatedTime(date);
         user.setModifiedTime(date);
+        user.setPower("0001");
 
         // 执行注册
         Integer rows = userMapper.insert(user);
@@ -65,11 +74,19 @@ public class UserServiceImpl implements IUserService {
             throw new PasswordNotMatchException("密码错误");
         }
 
-        // 创建新的User对象，仅包含必要的信息返回
+        // 生成 token
+        String token = jwtUtil.generateToken(result.getUid(), result.getUsername());
+        
+        // 存储到 Redis
+        String redisKey = "token:" + result.getUid();
+        redisUtil.setToken(redisKey, token, 7 * 24 * 60 * 60 * 1000L);
+
+        // 设置 token 到用户对象
         User user = new User();
         user.setUid(result.getUid());
         user.setUsername(result.getUsername());
         user.setAvatar(result.getAvatar());
+        user.setToken(token);
 
         return user;
     }

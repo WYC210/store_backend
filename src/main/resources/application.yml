@@ -6,10 +6,24 @@ spring:
     url: jdbc:mysql://localhost:3306/store?allowPublicKeyRetrieval=true&useSSL=false
     username: root
     password: 123456
-
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password: wz123456
+      database: 0
+      timeout: 5000
+      client-type: jedis
+      jedis:
+        pool:
+          enabled: true
+          max-active: 8
+          max-wait: -1ms
+          max-idle: 8
+          min-idle: 0
   mvc:
     cors:
-      allowed-origins: "http://localhost:8080"
+      allowed-origins: "*"
       allowed-methods: "*"
       allowed-headers: "*"
       allow-credentials: true

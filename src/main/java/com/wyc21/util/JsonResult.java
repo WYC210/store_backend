@@ -6,7 +6,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Getter
-@Setter 
+@Setter
 // 统一响应结果的类型
 public class JsonResult<E> implements Serializable {
     // 状态码
@@ -17,12 +17,18 @@ public class JsonResult<E> implements Serializable {
     private E data;
 
     public JsonResult() {
-        
+
     }
 
     public JsonResult(Integer state, E data) {
         this.state = state;
         this.data = data;
+    }
+
+    public JsonResult(Integer state, E data, String message) {
+        this.state = state;
+        this.data = data;
+        this.message = message;
     }
 
     public JsonResult(Integer state) {
@@ -33,4 +39,3 @@ public class JsonResult<E> implements Serializable {
         this.message = e.getMessage();
     }
 }
-
