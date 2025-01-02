@@ -11,4 +11,5 @@ public class BaseEntity implements Serializable {
     private Date createdTime; 
     private String modifiedUser; 
     private Date modifiedTime;
+    
 }

@@ -46,7 +46,7 @@ public class UserServiceImpl implements IUserService {
         Date date = new Date();
         user.setCreatedTime(date);
         user.setModifiedTime(date);
-        user.setPower("0001");
+        user.setPower("user");
 
         // 执行注册
         Integer rows = userMapper.insert(user);

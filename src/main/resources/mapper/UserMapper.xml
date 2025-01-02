@@ -10,31 +10,33 @@
 
     <!-- 配置User实体类中属性与数据库表中字段之间的映射关系-->
     <resultMap id="UserEntityMap" type="com.wyc21.entity.User">
-        <!-- 防止映射名称不一致-->
-        <!-- 主键映射 (不可省略)-->
         <id property="uid" column="uid"/>
-        <!-- 非主键映射 -->
-       <result property="createdUser" column="created_user"/>
-       <result property="createdTime" column="created_time"/>
-       <result property="modifiedTime" column="modified_time"/>
-       <result property="modifiedUser" column="modified_user"/>
-       <result property="isDelete" column="is_delete"/>
+        <result property="username" column="username"/>
+        <result property="password" column="password"/>
+        <result property="power" column="power"/>
+        <result property="phone" column="phone"/>
+        <result property="email" column="email"/>
+        <result property="gender" column="gender"/>
+        <result property="avatar" column="avatar"/>
+        <result property="isDelete" column="is_delete"/>
+        <result property="createdUser" column="created_user"/>
+        <result property="createdTime" column="created_time"/>
+        <result property="modifiedUser" column="modified_user"/>
+        <result property="modifiedTime" column="modified_time"/>
     </resultMap>
+
     <!-- 插入用户数据 -->
     <insert id="insert" parameterType="com.wyc21.entity.User" useGeneratedKeys="true" keyProperty="uid">
-        INSERT INTO t_user (
-            username, password, salt, phone, email, gender, avatar, is_delete, created_user, created_time, modified_user, modified_time
+        INSERT INTO wz_users (
+            username, password, power, phone, email, gender, avatar, is_delete, created_user, created_time, modified_user, modified_time
         ) VALUES (
-            #{username}, #{password}, #{salt}, #{phone}, #{email}, #{gender}, #{avatar}, #{isDelete}, #{createdUser}, #{createdTime}, #{modifiedUser}, #{modifiedTime}
+            #{username}, #{password}, #{power}, #{phone}, #{email}, #{gender}, #{avatar}, #{isDelete}, #{createdUser}, #{createdTime}, #{modifiedUser}, #{modifiedTime}
         )
     </insert>
 
-    <!-- 根据用户名查询用户数据 
-        parameterType 表示参数的类型
-        resultType 表示返回值的类型
-    -->
-    <select id="findByUsername"  resultMap="UserEntityMap">
-        SELECT * FROM t_user WHERE username=#{username}
+    <!-- 根据用户名查询用户数据 -->
+    <select id="findByUsername" resultMap="UserEntityMap">
+        SELECT * FROM wz_users WHERE username=#{username}
     </select>
 
 </mapper>
