@@ -74,20 +74,37 @@ public class UserServiceImpl implements IUserService {
             throw new PasswordNotMatchException("密码错误");
         }
 
-        // 生成 token
-        String token = jwtUtil.generateToken(result.getUid(), result.getUsername());
-        
-        // 存储到 Redis
-        String redisKey = "token:" + result.getUid();
-        redisUtil.setToken(redisKey, token, 7 * 24 * 60 * 60 * 1000L);
+        // 生成原始token
+        String originalToken = jwtUtil.generateToken(result.getUid(), result.getUsername());
 
-        // 设置 token 到用户对象
+        // 存储到Redis（存储原始token，不带Bearer前缀）
+        String redisKey = "token:" + result.getUid();
+        redisUtil.setToken(redisKey, originalToken, 7 * 24 * 60 * 60 * 1000L);
+
+        // 设置token到用户对象（添加Bearer前缀）
         User user = new User();
         user.setUid(result.getUid());
         user.setUsername(result.getUsername());
         user.setAvatar(result.getAvatar());
-        user.setToken(token);
+        user.setToken("Bearer " + originalToken);
 
+        return user;
+    }
+
+    @Override
+    public User getUserById(Integer uid) {
+        User result = userMapper.findByUid(uid);
+        if (result == null || result.getIsDelete() == 1) {
+            throw new UserNotFoundException("用户不存在");
+        }
+
+        // 创建新的User对象，仅返回必要的信息
+        User user = new User();
+        user.setUid(result.getUid());
+        user.setUsername(result.getUsername());
+        user.setAvatar(result.getAvatar());
+        user.setPower(result.getPower());
+        
         return user;
     }
 }

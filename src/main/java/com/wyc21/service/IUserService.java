@@ -17,4 +17,11 @@ public interface IUserService {
      * @return 登录成功的用户数据
      */
     User login(String username, String password);
+
+    /**
+     * 根据用户id获取用户信息
+     * @param uid 用户id
+     * @return 用户信息
+     */
+    User getUserById(Integer uid);
 }
