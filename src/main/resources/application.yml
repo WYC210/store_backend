@@ -21,19 +21,23 @@ spring:
           max-wait: -1ms
           max-idle: 8
           min-idle: 0
-  mvc:
-    cors:
-      allowed-origins: "*"
-      allowed-methods: "*"
-      allowed-headers: "*"
-      allow-credentials: true
-      max-age: 3600
 
+server:
+  port: 8088
+
+# 安全配置
+app:
+  security:
+    allowed-origins:
+      - "http://localhost:3000"
+      - "http://localhost:8080"
+    cookie-domain: "localhost"
+    secure-cookie: false
+    same-site: "Lax"
+
+# MyBatis配置
 mybatis:
   configuration:
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
     map-underscore-to-camel-case: true
   mapper-locations: classpath:mapper/*.xml
-
-server:
-  port: 8088

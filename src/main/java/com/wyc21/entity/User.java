@@ -14,7 +14,8 @@ public class User extends BaseEntity implements Serializable {
     private String email; 
     private Integer gender; 
     private String avatar; 
-    private Integer isDelete; 
+    private Integer isDelete;
+    
     private String token; 
   
 }

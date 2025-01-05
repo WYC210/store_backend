@@ -4,7 +4,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wyc21.util.JsonResult;
 import com.wyc21.util.JwtUtil;
 import com.wyc21.util.RedisUtil;
+import com.wyc21.util.IpUtil;
 import io.jsonwebtoken.Claims;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,16 +22,31 @@ public class TokenInterceptor implements HandlerInterceptor {
     @Autowired
     private RedisUtil redisUtil;
 
+    @Autowired
+    private IpUtil ipUtil;
+
     @Override
-    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
+            throws Exception {
         // 放行OPTIONS请求
         if ("OPTIONS".equals(request.getMethod())) {
             return true;
         }
 
-        // 从请求头获取token
-        String token = request.getHeader("Authorization");
-        if (token == null || token.isEmpty()) {
+        // 从Cookie中获取token
+        Cookie[] cookies = request.getCookies();
+        String token = null;
+
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if ("AUTH-TOKEN".equals(cookie.getName())) {
+                    token = cookie.getValue();
+                    break;
+                }
+            }
+        }
+
+        if (token == null) {
             handleError(response, "未登录");
             return false;
         }
@@ -43,6 +60,20 @@ public class TokenInterceptor implements HandlerInterceptor {
             // 解析token
             Claims claims = jwtUtil.parseToken(token);
             Integer uid = claims.get("uid", Integer.class);
+            String tokenIp = claims.get("ip", String.class);
+            String tokenIpLocation = claims.get("ipLocation", String.class);
+
+            // 获取当前请求的IP信息
+            String currentIp = ipUtil.getIpAddress(request);
+            String currentIpLocation = ipUtil.getIpLocation(currentIp);
+
+            // 验证IP和地理位置
+            if (!tokenIp.equals(currentIp) || !tokenIpLocation.equals(currentIpLocation)) {
+                // 删除Redis中的token
+                redisUtil.deleteToken("token:" + uid);
+                handleError(response, "检测到异常登录，请重新登录");
+                return false;
+            }
 
             // 从Redis验证token
             String storedToken = redisUtil.getToken("token:" + uid);
@@ -57,8 +88,7 @@ public class TokenInterceptor implements HandlerInterceptor {
 
             return true;
         } catch (Exception e) {
-            e.printStackTrace(); // 添加这行来查看具体错误
-            handleError(response, "token验证失败: " + e.getMessage());
+            handleError(response, "token验证失败");
             return false;
         }
     }
@@ -69,4 +99,4 @@ public class TokenInterceptor implements HandlerInterceptor {
         ObjectMapper mapper = new ObjectMapper();
         response.getWriter().write(mapper.writeValueAsString(new JsonResult<>(401, null, message)));
     }
-} 
+}

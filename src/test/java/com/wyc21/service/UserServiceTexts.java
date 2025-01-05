@@ -3,7 +3,10 @@ package com.wyc21.service;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
+import jakarta.servlet.http.Cookie;
 
 import com.wyc21.entity.User;
 import com.wyc21.ShoppingApplication;
@@ -26,9 +29,12 @@ public class UserServiceTexts {
         // 使用数据库中存在的用户
         String username = "test2";
         String password = "123456";
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        request.setRemoteAddr("127.0.0.1");
 
         try {
-            User loginUser = userService.login(username, password);
+            User loginUser = userService.login(username, password, request, response);
 
             // 断言验证
             assertNotNull(loginUser, "登录用户不应为null");
@@ -37,6 +43,11 @@ public class UserServiceTexts {
             System.out.println("\n********** 登录成功！**********");
             System.out.println("登录用户信息：" + loginUser);
             System.out.println("\n========== 测试完成 ==========\n");
+
+            // 验证Cookie是否设置正确
+            Cookie[] cookies = response.getCookies();
+            assertNotNull(cookies);
+            assertTrue(cookies.length > 0);
         } catch (Exception e) {
             System.out.println("\n********** 测试失败 **********");
             System.out.println("失败原因：" + e.getMessage());
@@ -49,10 +60,13 @@ public class UserServiceTexts {
         System.out.println("\n========== 开始测试密码错误登录 ==========\n");
 
         String username = "test2";
-        String wrongPassword = "wrong_password"; // 使用明显错误的密码
+        String wrongPassword = "wrong_password";
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        request.setRemoteAddr("127.0.0.1");
 
         Exception exception = assertThrows(PasswordNotMatchException.class, () -> {
-            userService.login(username, wrongPassword);
+            userService.login(username, wrongPassword, request, response);
         });
 
         System.out.println("********** 密码错误测试通过 **********");
@@ -66,9 +80,12 @@ public class UserServiceTexts {
 
         String username = "nonexistent_user";
         String password = "123456";
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        request.setRemoteAddr("127.0.0.1");
 
         Exception exception = assertThrows(UserNotFoundException.class, () -> {
-            userService.login(username, password);
+            userService.login(username, password, request, response);
         });
 
         System.out.println("********** 用户不存在测试通过 **********");
@@ -80,8 +97,11 @@ public class UserServiceTexts {
     public void testReg() {
         System.out.println("\n========== 开始测试注册流程 ==========\n");
 
-        String username = "test_" + System.currentTimeMillis(); // 使用时间戳确保用户名唯一
+        String username = "test_" + System.currentTimeMillis();
         String password = "123456";
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        request.setRemoteAddr("127.0.0.1");
 
         User user = new User();
         user.setUsername(username);
@@ -92,7 +112,7 @@ public class UserServiceTexts {
             System.out.println("********* 注册成功！*********");
 
             // 验证注册成功后是否能登录
-            User loginUser = userService.login(username, password);
+            User loginUser = userService.login(username, password, request, response);
             assertNotNull(loginUser);
             assertEquals(username, loginUser.getUsername());
             System.out.println("********* 注册后登录成功！*********");

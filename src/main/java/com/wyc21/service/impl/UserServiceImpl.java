@@ -14,6 +14,10 @@ import com.wyc21.service.ex.UserNotFoundException;
 import com.wyc21.service.ex.PasswordNotMatchException;
 import com.wyc21.util.JwtUtil;
 import com.wyc21.util.RedisUtil;
+import com.wyc21.util.IpUtil;
+import com.wyc21.util.CookieUtil;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 @Service
 public class UserServiceImpl implements IUserService {
@@ -27,6 +31,12 @@ public class UserServiceImpl implements IUserService {
     @Autowired
     private RedisUtil redisUtil;
 
+    @Autowired
+    private IpUtil ipUtil;
+
+    @Autowired
+    private CookieUtil cookieUtil;
+
     @Override
     public void reg(User user) {
         // 根据用户名查询用户数据,判断用户是否被注册过
@@ -35,9 +45,8 @@ public class UserServiceImpl implements IUserService {
             throw new UsernameDuplicatedException("用户名已被注册");
         }
         // 密码加密
-        String oldPassword = user.getPassword();
-        String newPassword = PasswordUtils.hashPassword(oldPassword);
-        user.setPassword(newPassword);
+
+        user.setPassword(PasswordUtils.hashPassword(user.getPassword()));
 
         // 补全数据
         user.setIsDelete(0);
@@ -56,7 +65,7 @@ public class UserServiceImpl implements IUserService {
     }
 
     @Override
-    public User login(String username, String password) {
+    public User login(String username, String password, HttpServletRequest request, HttpServletResponse response) {
         // 根据用户名查询用户数据
         User result = userMapper.findByUsername(username);
         if (result == null) {
@@ -74,19 +83,29 @@ public class UserServiceImpl implements IUserService {
             throw new PasswordNotMatchException("密码错误");
         }
 
-        // 生成原始token
-        String originalToken = jwtUtil.generateToken(result.getUid(), result.getUsername());
+        // 获取IP和地理位置
+        String ip = ipUtil.getIpAddress(request);
+        String ipLocation = ipUtil.getIpLocation(ip);
 
-        // 存储到Redis（存储原始token，不带Bearer前缀）
+        // 生成token
+        String token = jwtUtil.generateToken(result.getUid(), result.getUsername(), ip, ipLocation);
+
+        // 存储到Redis
         String redisKey = "token:" + result.getUid();
-        redisUtil.setToken(redisKey, originalToken, 7 * 24 * 60 * 60 * 1000L);
+        redisUtil.setToken(redisKey, token, 5 * 60 * 1000L);
+
+        // 设置HttpOnly Cookie
+        cookieUtil.setTokenCookie(response, token);
+
+        // 存储IP信息
+        redisUtil.setToken("ip:" + result.getUid(), ip + "|" + ipLocation, 7 * 24 * 60 * 60 * 1000L);
 
         // 设置token到用户对象（添加Bearer前缀）
         User user = new User();
         user.setUid(result.getUid());
         user.setUsername(result.getUsername());
         user.setAvatar(result.getAvatar());
-        user.setToken("Bearer " + originalToken);
+        user.setToken("Bearer " + token);
 
         return user;
     }
@@ -104,7 +123,7 @@ public class UserServiceImpl implements IUserService {
         user.setUsername(result.getUsername());
         user.setAvatar(result.getAvatar());
         user.setPower(result.getPower());
-        
+
         return user;
     }
 }

@@ -1,25 +1,32 @@
 package com.wyc21.service;
 
 import com.wyc21.entity.User;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 // 用户模块业务层接口
 public interface IUserService {
     /**
      * 用户注册
+     * 
      * @param user 用户数据
      */
     void reg(User user);
 
     /**
      * 用户登录
+     * 
      * @param username 用户名
      * @param password 密码
+     * @param request  HTTP请求对象，用于获取IP信息
+     * @param response HTTP响应对象，用于设置Cookie
      * @return 登录成功的用户数据
      */
-    User login(String username, String password);
+    User login(String username, String password, HttpServletRequest request, HttpServletResponse response);
 
     /**
      * 根据用户id获取用户信息
+     * 
      * @param uid 用户id
      * @return 用户信息
      */
