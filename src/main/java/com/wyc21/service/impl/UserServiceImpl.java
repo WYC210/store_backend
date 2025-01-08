@@ -83,12 +83,31 @@ public class UserServiceImpl implements IUserService {
             throw new PasswordNotMatchException("密码错误");
         }
 
-        // 获取IP和地理位置
-        String ip = ipUtil.getIpAddress(request);
-        String ipLocation = ipUtil.getIpLocation(ip);
+        // 获取当前请求的IP信息
+        String currentIp = ipUtil.getIpAddress(request);
+        String currentIpLocation = ipUtil.getIpLocation(currentIp);
+
+        // 获取存储的IP信息
+        String storedIpInfo = redisUtil.getToken("ip:" + result.getUid());
+        String[] ipParts = storedIpInfo != null ? storedIpInfo.split("\\|") : new String[]{"unknown", "unknown"};
+        String tokenIp = ipParts[0];
+        String tokenIpLocation = ipParts[1];
+
+        // 如果存储的IP信息为空，表示用户第一次登录，直接存储当前IP信息
+        if (storedIpInfo == null) {
+            // 存储IP信息
+            redisUtil.setToken("ip:" + result.getUid(), currentIp + "|" + currentIpLocation, 7 * 24 * 60 * 60 * 1000L);
+        } else {
+            // 验证IP和地理位置
+            if (!tokenIp.equals(currentIp) || !tokenIpLocation.equals(currentIpLocation)) {
+                // 删除Redis中的token
+                redisUtil.deleteToken("token:" + result.getUid());
+                throw new RuntimeException("检测到异常登录，请重新登录");
+            }
+        }
 
         // 生成token
-        String token = jwtUtil.generateToken(result.getUid(), result.getUsername(), ip, ipLocation);
+        String token = jwtUtil.generateToken(result.getUid(), result.getUsername(), currentIp, currentIpLocation);
 
         // 存储到Redis
         String redisKey = "token:" + result.getUid();
@@ -97,10 +116,7 @@ public class UserServiceImpl implements IUserService {
         // 设置HttpOnly Cookie
         cookieUtil.setTokenCookie(response, token);
 
-        // 存储IP信息
-        redisUtil.setToken("ip:" + result.getUid(), ip + "|" + ipLocation, 7 * 24 * 60 * 60 * 1000L);
-
-        // 设置token到用户对象（添加Bearer前缀）
+        // 返回用户信息
         User user = new User();
         user.setUid(result.getUid());
         user.setUsername(result.getUsername());

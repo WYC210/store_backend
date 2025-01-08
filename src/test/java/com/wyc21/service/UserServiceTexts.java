@@ -14,7 +14,7 @@ import com.wyc21.service.ex.PasswordNotMatchException;
 import com.wyc21.service.ex.UserNotFoundException;
 
 import static org.junit.jupiter.api.Assertions.*;
-
+import com.wyc21.util.RedisUtil;
 @SpringBootTest(classes = ShoppingApplication.class)
 @SpringJUnitConfig
 public class UserServiceTexts {
@@ -22,12 +22,15 @@ public class UserServiceTexts {
     @Autowired
     private IUserService userService;
 
+    @Autowired
+    private RedisUtil redisUtil;
+
     @Test
     public void testLoginSuccess() {
         System.out.println("\n========== 开始测试登录成功流程 ==========\n");
 
         // 使用数据库中存在的用户
-        String username = "test2";
+        String username = "wz";
         String password = "123456";
         MockHttpServletRequest request = new MockHttpServletRequest();
         MockHttpServletResponse response = new MockHttpServletResponse();
@@ -123,6 +126,49 @@ public class UserServiceTexts {
             fail("注册过程发生异常：" + e.getMessage());
         }
 
+        System.out.println("\n========== 测试完成 ==========\n");
+    }
+
+    @Test
+    public void testLoginWithDifferentIp() {
+        System.out.println("\n========== 开始测试不同IP登录 ==========\n");
+
+        String username = "wz"; // 假设这个用户存在
+        String password = "123456"; // 正确的密码
+        MockHttpServletRequest request1 = new MockHttpServletRequest();
+        MockHttpServletResponse response1 = new MockHttpServletResponse();
+        request1.setRemoteAddr("192.168.1.1"); // 第一次登录的IP
+
+        // 用户第一次登录
+        User loginUser = userService.login(username, password, request1, response1);
+        assertNotNull(loginUser, "登录用户不应为null");
+        assertEquals(username, loginUser.getUsername(), "用户名应该匹配");
+
+        // 验证 token 是否存储到 Redis
+        String redisToken = redisUtil.getToken("token:" + loginUser.getUid());
+        assertNotNull(redisToken, "Token 应该存储在 Redis 中");
+
+        // 验证 IP 信息是否存储到 Redis
+        String storedIpInfo = redisUtil.getToken("ip:" + loginUser.getUid());
+        assertNotNull(storedIpInfo, "IP 信息应该存储在 Redis 中");
+        String[] ipParts = storedIpInfo.split("\\|");
+        assertEquals("192.168.1.1", ipParts[0], "存储的IP应该匹配");
+
+        // 模拟第二次登录，使用不同的IP
+        MockHttpServletRequest request2 = new MockHttpServletRequest();
+        MockHttpServletResponse response2 = new MockHttpServletResponse();
+        request2.setRemoteAddr("192.168.1.2"); // 不同的IP
+
+        // 期望抛出异常
+        Exception exception = assertThrows(RuntimeException.class, () -> {
+            userService.login(username, password, request2, response2);
+        });
+
+        // 验证异常信息
+        assertEquals("检测到异常登录，请重新登录", exception.getMessage());
+
+        System.out.println("********** 不同IP登录测试通过 **********");
+        System.out.println("异常信息：" + exception.getMessage());
         System.out.println("\n========== 测试完成 ==========\n");
     }
 }
