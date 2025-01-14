@@ -59,7 +59,7 @@ public class TokenInterceptor implements HandlerInterceptor {
 
             // 解析token
             Claims claims = jwtUtil.parseToken(token);
-            Integer uid = claims.get("uid", Integer.class);
+            Long uid = claims.get("uid", Long.class);
             String tokenIp = claims.get("ip", String.class);
             String tokenIpLocation = claims.get("ipLocation", String.class);
 

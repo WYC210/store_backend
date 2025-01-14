@@ -2,36 +2,41 @@ package com.wyc21.util;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.security.Key;
+import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
 @Component
 public class JwtUtil {
-    private static final long ACCESS_TOKEN_EXPIRE = 5 * 60 * 1000;
-    private static final Key JWT_KEY = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+    @Value("${jwt.secret}")
+    private String secret;
 
-    public String generateToken(Integer uid, String username, String ip, String ipLocation) {
-        Date now = new Date();
-        Date expiration = new Date(now.getTime() + ACCESS_TOKEN_EXPIRE);
+    private SecretKey getSigningKey() {
+        byte[] keyBytes = secret.getBytes(StandardCharsets.UTF_8);
+        return Keys.hmacShaKeyFor(keyBytes);
+    }
 
+    public String generateToken(Long uid, String username, String ip, String ipLocation) {
+        SecretKey key = getSigningKey();
         return Jwts.builder()
                 .setSubject(username)
                 .claim("uid", uid)
                 .claim("ip", ip)
                 .claim("ipLocation", ipLocation)
-                .setIssuedAt(now)
-                .setExpiration(expiration)
-                .signWith(JWT_KEY)
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + 24 * 60 * 60 * 1000)) // 24小时有效期
+                .signWith(key)
                 .compact();
     }
 
     public Claims parseToken(String token) {
+        SecretKey key = getSigningKey();
         return Jwts.parserBuilder()
-                .setSigningKey(JWT_KEY)
+                .setSigningKey(key)
                 .build()
                 .parseClaimsJws(token)
                 .getBody();

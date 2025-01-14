@@ -12,9 +12,9 @@ import com.wyc21.entity.User;
 import com.wyc21.ShoppingApplication;
 import com.wyc21.service.ex.PasswordNotMatchException;
 import com.wyc21.service.ex.UserNotFoundException;
-
-import static org.junit.jupiter.api.Assertions.*;
 import com.wyc21.util.RedisUtil;
+import static org.junit.jupiter.api.Assertions.*;
+
 @SpringBootTest(classes = ShoppingApplication.class)
 @SpringJUnitConfig
 public class UserServiceTexts {
@@ -168,6 +168,109 @@ public class UserServiceTexts {
         assertEquals("检测到异常登录，请重新登录", exception.getMessage());
 
         System.out.println("********** 不同IP登录测试通过 **********");
+        System.out.println("异常信息：" + exception.getMessage());
+        System.out.println("\n========== 测试完成 ==========\n");
+    }
+
+    @Test
+    public void testUpdateUserInfo() {
+        System.out.println("\n========== 开始测试更新用户信息 ==========\n");
+
+        // 准备测试数据
+        Long uid = 1L; // 修改为Long类型
+        User user = new User();
+        user.setUid(uid);
+        user.setPhone("13800138000");
+        user.setEmail("test@example.com");
+        user.setGender(1);
+        user.setAvatar("new_avatar.jpg");
+
+        try {
+            // 更新用户信息
+            User updatedUser = userService.updateUserInfo(user);
+
+            // 验证更新结果
+            assertNotNull(updatedUser, "更新后的用户不应为null");
+            assertEquals(uid, updatedUser.getUid(), "用户ID应该匹配");
+            assertEquals("13800138000", updatedUser.getPhone(), "电话号码应该更新成功");
+            assertEquals("test@example.com", updatedUser.getEmail(), "邮箱应该更新成功");
+            assertEquals(Integer.valueOf(1), updatedUser.getGender(), "性别应该更新成功");
+            assertEquals("new_avatar.jpg", updatedUser.getAvatar(), "头像应该更新成功");
+
+            System.out.println("********** 用户信息更新成功！**********");
+            System.out.println("更新后的用户信息：" + updatedUser);
+
+        } catch (Exception e) {
+            System.out.println("\n********** 测试失败 **********");
+            System.out.println("失败原因：" + e.getMessage());
+            fail("更新用户信息应该成功，但是失败了：" + e.getMessage());
+        }
+
+        System.out.println("\n========== 测试完成 ==========\n");
+    }
+
+    @Test
+    public void testUpdateNonexistentUser() {
+        System.out.println("\n========== 开始测试更新不存在用户的信息 ==========\n");
+
+        // 准备测试数据
+        Long nonexistentUid = 99999L; // 修改为Long类型
+        User user = new User();
+        user.setUid(nonexistentUid);
+        user.setPhone("13800138000");
+
+        // 验证是否抛出UserNotFoundException
+        Exception exception = assertThrows(UserNotFoundException.class, () -> {
+            userService.updateUserInfo(user);
+        });
+
+        System.out.println("********** 测试通过 **********");
+        System.out.println("异常信息：" + exception.getMessage());
+        System.out.println("\n========== 测试完成 ==========\n");
+    }
+
+    @Test
+    public void testGetUserInfo() {
+        System.out.println("\n========== 开始测试获取用户信息 ==========\n");
+
+        // 准备测试数据
+        Long uid = 1L; // 修改为Long类型
+
+        try {
+            // 获取用户信息
+            User user = userService.getUserById(uid);
+
+            // 验证结果
+            assertNotNull(user, "用户不应为null");
+            assertEquals(uid, user.getUid(), "用户ID应该匹配");
+            assertNotNull(user.getUsername(), "用户名不应为null");
+            assertNotNull(user.getPower(), "用户权限不应为null");
+
+            System.out.println("********** 获取用户信息成功！**********");
+            System.out.println("用户信息：" + user);
+
+        } catch (Exception e) {
+            System.out.println("\n********** 测试失败 **********");
+            System.out.println("失败原因：" + e.getMessage());
+            fail("获取用户信息应该成功，但是失败了：" + e.getMessage());
+        }
+
+        System.out.println("\n========== 测试完成 ==========\n");
+    }
+
+    @Test
+    public void testGetNonexistentUser() {
+        System.out.println("\n========== 开始测试获取不存在用户的信息 ==========\n");
+
+        // 准备测试数据
+        Long nonexistentUid = 99999L; // 修改为Long类型
+
+        // 验证是否抛出UserNotFoundException
+        Exception exception = assertThrows(UserNotFoundException.class, () -> {
+            userService.getUserById(nonexistentUid);
+        });
+
+        System.out.println("********** 测试通过 **********");
         System.out.println("异常信息：" + exception.getMessage());
         System.out.println("\n========== 测试完成 ==========\n");
     }

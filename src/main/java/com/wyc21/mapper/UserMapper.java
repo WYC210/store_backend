@@ -23,8 +23,17 @@ public interface UserMapper {
 
     /**
      * 根据用户id查询用户数据
+     * 
      * @param uid 用户id
      * @return 用户数据
      */
-    User findByUid(Integer uid);
+    User findByUid(Long uid);
+
+    /**
+     * 更新用户信息
+     * 
+     * @param user 用户数据
+     * @return 受影响的行数
+     */
+    Integer updateInfo(User user);
 }

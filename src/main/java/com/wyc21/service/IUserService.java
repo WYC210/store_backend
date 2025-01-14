@@ -30,5 +30,13 @@ public interface IUserService {
      * @param uid 用户id
      * @return 用户信息
      */
-    User getUserById(Integer uid);
+    User getUserById(Long uid);
+
+    /**
+     * 更新用户信息
+     * 
+     * @param user 用户信息
+     * @return 更新后的用户信息
+     */
+    User updateUserInfo(User user);
 }

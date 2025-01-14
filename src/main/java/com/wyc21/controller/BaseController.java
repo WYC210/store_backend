@@ -38,8 +38,8 @@ public class BaseController {
         return result;
     }
     // 从HttpSession对象中获取uid   
-    protected final Integer getuidFromSession(HttpSession session) {
-        return Integer.valueOf(session.getAttribute("uid").toString());
+    protected final Long getuidFromSession(HttpSession session) {
+        return Long.valueOf(session.getAttribute("uid").toString());
     }
     // 从HttpSession对象中获取username
     protected final String getUsernameFromSession(HttpSession session) {

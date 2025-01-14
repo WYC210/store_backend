@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wyc21.mapper.IdGeneratorMapper">
+    <insert id="initIdGenerator">
+        INSERT INTO wz_id_generator (id_type, current_max_id, step, version)
+        VALUES (#{idType}, #{currentMaxId}, 100, 1)
+        ON DUPLICATE KEY UPDATE
+        current_max_id = VALUES(current_max_id)
+    </insert>
+    
+    <select id="getCurrentMaxId" resultType="java.lang.Long">
+        SELECT current_max_id 
+        FROM wz_id_generator 
+        WHERE id_type = #{idType}
+    </select>
+    
+    <update id="updateMaxId">
+        UPDATE wz_id_generator 
+        SET current_max_id = #{newMaxId},
+            version = version + 1
+        WHERE id_type = #{idType} 
+        AND version = #{version}
+    </update>
+</mapper> 
