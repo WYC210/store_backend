@@ -11,6 +11,7 @@ import com.wyc21.util.CookieUtil;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/users")
@@ -102,7 +103,7 @@ public class UserController extends BaseController {
         }
     }
 
-    @PutMapping("/update")
+    @PatchMapping("/update")
     public JsonResult<User> updateUserInfo(@RequestBody User user, HttpServletRequest request) {
         try {
             Long uid = (Long) request.getAttribute("uid");
@@ -132,6 +133,35 @@ public class UserController extends BaseController {
         } catch (Exception e) {
             e.printStackTrace();
             return new JsonResult<>(500, null, "更新用户信息失败：" + e.getMessage());
+        }
+    }
+
+    @PatchMapping("/password")
+    public JsonResult<Void> updatePassword(@RequestBody Map<String, String> params, HttpServletRequest request) {
+        try {
+            Long uid = (Long) request.getAttribute("uid");
+            if (uid == null) {
+                return new JsonResult<>(401, null, "未获取到用户ID");
+            }
+
+            String oldPassword = params.get("oldPassword");
+            String newPassword = params.get("newPassword");
+
+            // 参数验证
+            if (oldPassword == null || oldPassword.trim().isEmpty()) {
+                return new JsonResult<>(400, null, "旧密码不能为空");
+            }
+            if (newPassword == null || newPassword.trim().isEmpty()) {
+                return new JsonResult<>(400, null, "新密码不能为空");
+            }
+
+            // 调用service层更新密码
+            userService.updatePassword(uid, oldPassword, newPassword);
+
+            return new JsonResult<>(OK, null, "密码修改成功");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new JsonResult<>(500, null, "修改密码失败：" + e.getMessage());
         }
     }
 }

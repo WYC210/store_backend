@@ -14,8 +14,8 @@ public class SnowflakeIdGenerator {
     
     // 每部分的最大值
     private final long MAX_SEQUENCE = -1L ^ (-1L << SEQUENCE_BIT);
-    private final long MAX_MACHINE_NUM = -1L ^ (-1L << MACHINE_BIT);
-    private final long MAX_DATACENTER_NUM = -1L ^ (-1L << DATACENTER_BIT);
+    // private final long MAX_MACHINE_NUM = -1L ^ (-1L << MACHINE_BIT);
+    // private final long MAX_DATACENTER_NUM = -1L ^ (-1L << DATACENTER_BIT);
     
     // 每部分向左的位移
     private final long MACHINE_LEFT = SEQUENCE_BIT;

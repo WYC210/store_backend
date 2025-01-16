@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wyc21.mapper.ProductMapper">
+    
+    <resultMap id="ProductMap" type="com.wyc21.entity.Product">
+        <id property="productId" column="product_id"/>
+        <result property="name" column="name"/>
+        <result property="description" column="description"/>
+        <result property="price" column="price"/>
+        <result property="stock" column="stock"/>
+        <result property="categoryId" column="category_id"/>
+        <result property="sku" column="sku"/>
+        <result property="brand" column="brand"/>
+        <result property="tags" column="tags"/>
+        <result property="rating" column="rating"/>
+        <result property="reviewCount" column="review_count"/>
+        <result property="lowStockThreshold" column="low_stock_threshold"/>
+        <result property="isActive" column="is_active"/>
+        <result property="imageUrl" column="image_url"/>
+    </resultMap>
+
+    <select id="findProducts" resultMap="ProductMap">
+        SELECT p.*
+        FROM wz_products p
+        WHERE p.is_active = 1
+        <if test="categoryId != null">
+            AND p.category_id = #{categoryId}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            AND (
+                p.name LIKE CONCAT('%', #{keyword}, '%') OR
+                p.description LIKE CONCAT('%', #{keyword}, '%') OR
+                p.brand LIKE CONCAT('%', #{keyword}, '%') OR
+                p.tags LIKE CONCAT('%', #{keyword}, '%')
+            )
+        </if>
+        ORDER BY p.created_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <select id="countProducts" resultType="int">
+        SELECT COUNT(*)
+        FROM wz_products p
+        WHERE p.is_active = 1
+        <if test="categoryId != null">
+            AND p.category_id = #{categoryId}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            AND (
+                p.name LIKE CONCAT('%', #{keyword}, '%') OR
+                p.description LIKE CONCAT('%', #{keyword}, '%') OR
+                p.brand LIKE CONCAT('%', #{keyword}, '%') OR
+                p.tags LIKE CONCAT('%', #{keyword}, '%')
+            )
+        </if>
+    </select>
+
+    <select id="findById" resultMap="ProductMap">
+        SELECT p.*
+        FROM wz_products p
+        WHERE p.product_id = #{productId}
+    </select>
+</mapper> 

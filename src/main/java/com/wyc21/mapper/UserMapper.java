@@ -36,4 +36,12 @@ public interface UserMapper {
      * @return 受影响的行数
      */
     Integer updateInfo(User user);
+
+    /**
+     * 更新用户密码
+     * 
+     * @param user 用户数据
+     * @return 受影响的行数
+     */
+    Integer updatePassword(User user);
 }

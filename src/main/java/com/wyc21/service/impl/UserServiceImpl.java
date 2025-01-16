@@ -193,4 +193,34 @@ public class UserServiceImpl implements IUserService {
         // 获取更新后的用户信息
         return userMapper.findByUid(user.getUid());
     }
+
+    @Override
+    public void updatePassword(Long uid, String oldPassword, String newPassword) {
+        // 获取用户信息
+        User result = userMapper.findByUid(uid);
+        if (result == null || result.getIsDelete() == 1) {
+            throw new UserNotFoundException("用户不存在");
+        }
+
+        // 验证旧密码
+        if (!PasswordUtils.checkPassword(oldPassword, result.getPassword())) {
+            throw new PasswordNotMatchException("原密码错误");
+        }
+
+        // 加密新密码
+        String hashedPassword = PasswordUtils.hashPassword(newPassword);
+
+        // 创建更新对象
+        User updateUser = new User();
+        updateUser.setUid(uid);
+        updateUser.setPassword(hashedPassword);
+        updateUser.setModifiedUser(result.getUsername());
+        updateUser.setModifiedTime(new Date());
+
+        // 执行更新
+        Integer rows = userMapper.updatePassword(updateUser);
+        if (rows != 1) {
+            throw new RuntimeException("更新密码时出现未知错误");
+        }
+    }
 }

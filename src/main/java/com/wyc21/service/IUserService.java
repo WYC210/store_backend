@@ -39,4 +39,13 @@ public interface IUserService {
      * @return 更新后的用户信息
      */
     User updateUserInfo(User user);
+
+    /**
+     * 更新用户密码
+     * 
+     * @param uid 用户id
+     * @param oldPassword 旧密码
+     * @param newPassword 新密码
+     */
+    void updatePassword(Long uid, String oldPassword, String newPassword);
 }

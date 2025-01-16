@@ -28,6 +28,16 @@ public class TokenInterceptor implements HandlerInterceptor {
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
             throws Exception {
+        // 获取请求路径
+        String path = request.getRequestURI();
+        
+        // 检查是否是不需要拦截的路径
+        if (path.startsWith("/products") || 
+            path.equals("/users/login") || 
+            path.equals("/users/reg")) {
+            return true;  // 直接放行
+        }
+        
         // 放行OPTIONS请求
         if ("OPTIONS".equals(request.getMethod())) {
             return true;

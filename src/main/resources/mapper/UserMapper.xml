@@ -72,4 +72,14 @@
         WHERE uid = #{uid}
     </update>
 
+    <!-- 修改密码 -->
+    <update id="updatePassword">
+        UPDATE wz_users 
+        SET 
+            password = #{password},
+            modified_user = #{modifiedUser},
+            modified_time = #{modifiedTime}
+        WHERE uid = #{uid}
+    </update>
+
 </mapper>
