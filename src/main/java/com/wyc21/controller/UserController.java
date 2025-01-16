@@ -8,7 +8,6 @@ import com.wyc21.util.JsonResult;
 import com.wyc21.util.RedisUtil;
 import com.wyc21.util.CookieUtil;
 
-
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.Map;
@@ -40,8 +39,8 @@ public class UserController extends BaseController {
         user.setIsDelete(0);
         user.setPower("user");
         user.setAvatar("default.jpg");
-        user.setGender(0);  // 默认性别为未知
-        
+        user.setGender(0); // 默认性别为未知
+
         userService.reg(user);
         return new JsonResult<>(OK, null, "注册成功");
     }
@@ -56,8 +55,21 @@ public class UserController extends BaseController {
             return new JsonResult<>(400, null, "密码不能为空");
         }
 
+        // 登录并获取完整的用户信息
         User data = userService.login(user.getUsername(), user.getPassword(), request, response);
-        return new JsonResult<>(OK, data, "登录成功");
+
+        // 创建响应对象，只包含需要返回的信息
+        User responseUser = new User();
+        responseUser.setUid(data.getUid());
+        responseUser.setUsername(data.getUsername());
+        responseUser.setPower(data.getPower());
+        responseUser.setPhone(data.getPhone() != null ? data.getPhone() : ""); // 添加手机号
+        responseUser.setEmail(data.getEmail() != null ? data.getEmail() : ""); // 添加邮箱
+        responseUser.setGender(data.getGender() != null ? data.getGender() : 0); // 添加性别
+        responseUser.setAvatar(data.getAvatar());
+        responseUser.setToken(data.getToken());
+
+        return new JsonResult<>(OK, responseUser, "登录成功");
     }
 
     @PostMapping("/logout")

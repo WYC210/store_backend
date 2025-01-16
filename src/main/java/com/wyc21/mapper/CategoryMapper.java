@@ -8,10 +8,10 @@ import java.util.List;
 public interface CategoryMapper {
     // 获取所有分类
     List<Category> findAll();
-    
+
     // 获取顶级分类
     List<Category> findParentCategories();
-    
+
     // 获取子分类
     List<Category> findChildCategories(Long parentId);
-} 
+}

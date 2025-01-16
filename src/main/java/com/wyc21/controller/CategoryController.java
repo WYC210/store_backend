@@ -13,13 +13,13 @@ import java.util.List;
 @RestController
 @RequestMapping("/categories")
 public class CategoryController extends BaseController {
-    
+
     @Autowired
     private CategoryService categoryService;
-    
+
     @GetMapping
     public JsonResult<List<Category>> getCategories() {
         List<Category> categories = categoryService.getCategoryTree();
         return new JsonResult<>(OK, categories);
     }
-} 
+}

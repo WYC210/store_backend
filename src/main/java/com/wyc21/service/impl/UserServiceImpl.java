@@ -68,9 +68,9 @@ public class UserServiceImpl implements IUserService {
         user.setModifiedTime(date);
         user.setPower("user");
         user.setAvatar("default.jpg");
-        user.setGender(0);  // 默认性别为未知
-        user.setPhone("");  // 空字符串而不是null
-        user.setEmail("");  // 空字符串而不是null
+        user.setGender(0); // 默认性别为未知
+        user.setPhone(""); // 空字符串而不是null
+        user.setEmail(""); // 空字符串而不是null
 
         // 执行注册
         Integer rows = userMapper.insert(user);
@@ -83,7 +83,7 @@ public class UserServiceImpl implements IUserService {
     private Long generateUniqueId() {
         // 使用雪花算法生成ID
         Long id = snowflakeIdGenerator.nextId();
-        
+
         // 记录到ID生成器表
         try {
             idGeneratorMapper.initIdGenerator("user", id);
@@ -94,7 +94,7 @@ public class UserServiceImpl implements IUserService {
                 idGeneratorMapper.updateMaxId("user", id, 1);
             }
         }
-        
+
         return id;
     }
 
@@ -134,12 +134,18 @@ public class UserServiceImpl implements IUserService {
         // 存储IP信息
         redisUtil.setToken("ip:" + result.getUid(), ip + "|" + ipLocation, 7 * 24 * 60 * 60 * 1000L);
 
-        // 设置token到用户对象（添加Bearer前缀）
+        // 设置token到用户对象（这里只设置了部分字段）
         User user = new User();
         user.setUid(result.getUid());
         user.setUsername(result.getUsername());
         user.setAvatar(result.getAvatar());
         user.setToken("Bearer " + token);
+
+        // 需要添加这些字段
+        user.setPhone(result.getPhone()); // 设置手机号
+        user.setEmail(result.getEmail()); // 设置邮箱
+        user.setGender(result.getGender()); // 设置性别
+        user.setPower(result.getPower()); // 设置权限
 
         return user;
     }

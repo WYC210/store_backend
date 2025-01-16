@@ -43,8 +43,12 @@
     </insert>
 
     <!-- 根据用户名查询用户数据 -->
-    <select id="findByUsername" resultMap="UserEntityMap">
-        SELECT * FROM wz_users WHERE username=#{username}
+    <select id="findByUsername" resultType="com.wyc21.entity.User">
+        SELECT 
+            uid, username, password, power, phone, email, gender, avatar,
+            is_delete, created_user, created_time, modified_user, modified_time
+        FROM wz_users 
+        WHERE username = #{username}
     </select>
 
     <!-- 根据用户id查询用户数据 -->
