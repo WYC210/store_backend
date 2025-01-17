@@ -1,6 +1,7 @@
 package com.wyc21.service.impl;
 
 import com.wyc21.entity.Product;
+import com.wyc21.entity.ProductReview;
 
 import com.wyc21.service.ProductService;
 import com.wyc21.util.PageResult;
@@ -40,5 +41,11 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public Product getProduct(Long productId) {
         return productMapper.findById(productId);
+    }
+    
+    @Override
+    public List<ProductReview> getProductReviews(Long productId, int limit) {
+        // 调用 mapper 获取评论列表
+        return productMapper.findReviewsByProductId(productId, limit);
     }
 } 

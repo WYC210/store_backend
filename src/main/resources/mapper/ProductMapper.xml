@@ -17,11 +17,38 @@
         <result property="lowStockThreshold" column="low_stock_threshold"/>
         <result property="isActive" column="is_active"/>
         <result property="imageUrl" column="image_url"/>
+        <collection property="reviews" ofType="com.wyc21.entity.ProductReview">
+            <id property="reviewId" column="review_id"/>
+            <result property="productId" column="product_id"/>
+            <result property="userId" column="user_id"/>
+            <result property="username" column="username"/>
+            <result property="rating" column="review_rating"/>
+            <result property="content" column="content"/>
+            <result property="createdTime" column="review_created_time"/>
+        </collection>
     </resultMap>
 
     <select id="findProducts" resultMap="ProductMap">
-        SELECT p.*
+        SELECT 
+            p.*,
+            r.review_id,
+            r.user_id,
+            r.rating as review_rating,
+            r.content,
+            r.created_time as review_created_time,
+            u.username
         FROM wz_products p
+        LEFT JOIN (
+            <![CDATA[
+            SELECT * FROM (
+                SELECT pr.*, 
+                       ROW_NUMBER() OVER (PARTITION BY product_id ORDER BY created_time DESC) as rn
+                FROM wz_product_reviews pr
+            ) ranked
+            WHERE ranked.rn <= 5
+            ]]>
+        ) r ON p.product_id = r.product_id
+        LEFT JOIN wz_users u ON r.user_id = u.uid
         WHERE p.is_active = 1
         <if test="categoryId != null">
             AND p.category_id = #{categoryId}
@@ -34,7 +61,7 @@
                 p.tags LIKE CONCAT('%', #{keyword}, '%')
             )
         </if>
-        ORDER BY p.created_time DESC
+        ORDER BY p.created_time DESC, r.created_time DESC
         LIMIT #{offset}, #{limit}
     </select>
 
@@ -59,5 +86,16 @@
         SELECT p.*
         FROM wz_products p
         WHERE p.product_id = #{productId}
+    </select>
+
+    <select id="findReviewsByProductId" resultType="com.wyc21.entity.ProductReview">
+        SELECT 
+            r.*,
+            u.username
+        FROM wz_product_reviews r
+        LEFT JOIN wz_users u ON r.user_id = u.uid
+        WHERE r.product_id = #{productId}
+        ORDER BY r.created_time DESC
+        LIMIT #{limit}
     </select>
 </mapper> 

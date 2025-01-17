@@ -21,4 +21,5 @@ public class Product extends BaseEntity {
     private Integer lowStockThreshold; // 库存预警阈值
     private Integer isActive; // 是否上架
     private String imageUrl; // 主图URL
+    private List<ProductReview> reviews; // 添加评论列表字段
 }

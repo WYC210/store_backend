@@ -4,6 +4,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 import com.wyc21.entity.Product;
+import com.wyc21.entity.ProductReview;
 
 import java.util.List;
 
@@ -21,4 +22,8 @@ public interface ProductMapper {
     
     // 获取商品详情（包括图片）
     Product findById(Long productId);
+    
+    // 获取商品评论
+    List<ProductReview> findReviewsByProductId(@Param("productId") Long productId, 
+                                         @Param("limit") int limit);
 } 
