@@ -24,6 +24,7 @@ spring:
 
 server:
   port: 8088
+  address: 0.0.0.0  # 允许从所有网络接口访问
 
 # 安全配置
 app:

@@ -33,6 +33,7 @@ public class TokenInterceptor implements HandlerInterceptor {
 
         // 检查是否是不需要拦截的路径
         if (path.startsWith("/products") ||
+                path.startsWith("/categories") ||
                 path.equals("/users/login") ||
                 path.equals("/users/reg")) {
             return true; // 直接放行
