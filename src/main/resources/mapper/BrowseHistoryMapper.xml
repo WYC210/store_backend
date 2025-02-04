@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wyc21.mapper.BrowseHistoryMapper">
+    
+    <insert id="insert" parameterType="com.wyc21.entity.BrowseHistory">
+        INSERT INTO wz_browse_history (
+            history_id, fingerprint_id, user_id, product_id, browse_time
+        ) VALUES (
+            #{historyId}, #{fingerprintId}, #{userId}, #{productId}, #{browseTime}
+        )
+    </insert>
+    
+    <select id="findByFingerprintId" resultType="com.wyc21.entity.BrowseHistory">
+        SELECT * FROM wz_browse_history 
+        WHERE fingerprint_id = #{fingerprintId}
+        ORDER BY browse_time DESC
+    </select>
+    
+    <select id="findByUserId" resultType="com.wyc21.entity.BrowseHistory">
+        SELECT * FROM wz_browse_history 
+        WHERE user_id = #{userId}
+        ORDER BY browse_time DESC
+    </select>
+    
+    <update id="updateUserIdByFingerprintId">
+        UPDATE wz_browse_history 
+        SET user_id = #{userId}
+        WHERE fingerprint_id = #{fingerprintId}
+        AND user_id IS NULL
+    </update>
+</mapper> 

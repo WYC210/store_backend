@@ -4,58 +4,57 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class SnowflakeIdGenerator {
-    // 开始时间戳（2024-01-01 00:00:00）
-    private final long START_TIMESTAMP = 1704038400000L;
+    private final long startEpoch = 1609459200000L; // 2021-01-01
+    private final long workerIdBits = 5L;
+    private final long datacenterIdBits = 5L;
+    private final long maxWorkerId = -1L ^ (-1L << workerIdBits);
+    private final long maxDatacenterId = -1L ^ (-1L << datacenterIdBits);
+    private final long sequenceBits = 12L;
     
-    // 每部分占用的位数
-    private final long SEQUENCE_BIT = 12;   // 序列号占用的位数
-    private final long MACHINE_BIT = 5;     // 机器标识占用的位数
-    private final long DATACENTER_BIT = 5;  // 数据中心占用的位数
-    
-    // 每部分的最大值
-    private final long MAX_SEQUENCE = -1L ^ (-1L << SEQUENCE_BIT);
-    // private final long MAX_MACHINE_NUM = -1L ^ (-1L << MACHINE_BIT);
-    // private final long MAX_DATACENTER_NUM = -1L ^ (-1L << DATACENTER_BIT);
-    
-    // 每部分向左的位移
-    private final long MACHINE_LEFT = SEQUENCE_BIT;
-    private final long DATACENTER_LEFT = SEQUENCE_BIT + MACHINE_BIT;
-    private final long TIMESTAMP_LEFT = DATACENTER_LEFT + DATACENTER_BIT;
-    
-    private long datacenterId = 1;  // 数据中心ID
-    private long machineId = 1;     // 机器标识ID
-    private long sequence = 0L;     // 序列号
-    private long lastTimestamp = -1L;// 上一次时间戳
-    
+    private final long workerIdShift = sequenceBits;
+    private final long datacenterIdShift = sequenceBits + workerIdBits;
+    private final long timestampLeftShift = sequenceBits + workerIdBits + datacenterIdBits;
+    private final long sequenceMask = -1L ^ (-1L << sequenceBits);
+
+    private long workerId;
+    private long datacenterId;
+    private long sequence = 0L;
+    private long lastTimestamp = -1L;
+
+    public SnowflakeIdGenerator() {
+        this.workerId = 1;
+        this.datacenterId = 1;
+    }
+
     public synchronized long nextId() {
-        long currTimestamp = System.currentTimeMillis();
-        
-        if (currTimestamp < lastTimestamp) {
-            throw new RuntimeException("Clock moved backwards. Refusing to generate id");
+        long timestamp = timeGen();
+        if (timestamp < lastTimestamp) {
+            throw new RuntimeException("Clock moved backwards");
         }
-        
-        if (currTimestamp == lastTimestamp) {
-            sequence = (sequence + 1) & MAX_SEQUENCE;
-            if (sequence == 0L) {
-                currTimestamp = getNextMillis();
+        if (lastTimestamp == timestamp) {
+            sequence = (sequence + 1) & sequenceMask;
+            if (sequence == 0) {
+                timestamp = tilNextMillis(lastTimestamp);
             }
         } else {
             sequence = 0L;
         }
-        
-        lastTimestamp = currTimestamp;
-        
-        return ((currTimestamp - START_TIMESTAMP) << TIMESTAMP_LEFT) 
-                | (datacenterId << DATACENTER_LEFT) 
-                | (machineId << MACHINE_LEFT) 
-                | sequence;
+        lastTimestamp = timestamp;
+        return ((timestamp - startEpoch) << timestampLeftShift) |
+                (datacenterId << datacenterIdShift) |
+                (workerId << workerIdShift) |
+                sequence;
     }
-    
-    private long getNextMillis() {
-        long timestamp = System.currentTimeMillis();
+
+    private long tilNextMillis(long lastTimestamp) {
+        long timestamp = timeGen();
         while (timestamp <= lastTimestamp) {
-            timestamp = System.currentTimeMillis();
+            timestamp = timeGen();
         }
         return timestamp;
+    }
+
+    private long timeGen() {
+        return System.currentTimeMillis();
     }
 } 
