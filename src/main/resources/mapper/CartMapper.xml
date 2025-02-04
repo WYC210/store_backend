@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wyc21.mapper.CartMapper">
+    
+    <select id="findByUserId" resultType="com.wyc21.entity.Cart">
+        SELECT * FROM wz_carts WHERE user_id = #{userId} AND is_checked_out = 0
+    </select>
+    
+    <insert id="insert" parameterType="com.wyc21.entity.Cart">
+        INSERT INTO wz_carts (cart_id, user_id, created_time)
+        VALUES (#{cartId}, #{userId}, NOW())
+    </insert>
+    
+    <select id="findCartItem" resultType="com.wyc21.entity.CartItem">
+        SELECT * FROM wz_cart_items 
+        WHERE cart_id = #{cartId} AND product_id = #{productId}
+    </select>
+    
+    <insert id="insertCartItem" parameterType="com.wyc21.entity.CartItem">
+        INSERT INTO wz_cart_items (
+            cart_item_id, cart_id, product_id, quantity, 
+            price, product_name, created_time
+        )
+        VALUES (
+            #{cartItemId}, #{cartId}, #{productId}, #{quantity}, 
+            #{price}, #{productName}, NOW()
+        )
+    </insert>
+    
+    <update id="updateCartItem" parameterType="com.wyc21.entity.CartItem">
+        UPDATE wz_cart_items 
+        SET quantity = #{quantity}, 
+            modified_time = NOW()
+        WHERE cart_item_id = #{cartItemId}
+    </update>
+    
+    <delete id="deleteCartItem">
+        DELETE FROM wz_cart_items 
+        WHERE cart_id = #{cartId} AND product_id = #{productId}
+    </delete>
+    
+    <select id="findCartItems" resultType="com.wyc21.dto.CartItemDTO">
+        SELECT ci.product_id, ci.quantity, ci.product_name, ci.price,
+               p.image_url
+        FROM wz_cart_items ci
+        JOIN wz_carts c ON ci.cart_id = c.cart_id
+        LEFT JOIN wz_products p ON ci.product_id = p.product_id
+        WHERE c.user_id = #{userId} AND c.is_checked_out = 0
+        ORDER BY ci.created_time DESC
+    </select>
+    
+    <delete id="deleteAllCartItems">
+        DELETE FROM wz_cart_items WHERE cart_id = #{cartId}
+    </delete>
+</mapper> 

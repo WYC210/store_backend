@@ -5,12 +5,13 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
-public class ProductReview {
+public class CartItem {
+    private Long cartItemId;
+    private Long cartId;
     private Long productId;
-    private String name;
+    private Integer quantity;
     private BigDecimal price;
-    private String description;
-    private BigDecimal rating;
-    private Integer reviewCount;
+    private String productName;
     private LocalDateTime createdTime;
+    private LocalDateTime modifiedTime;
 }

@@ -1,20 +1,87 @@
 package com.wyc21.service;
 
 import com.wyc21.entity.Product;
+import com.wyc21.entity.Category;
+import com.wyc21.mapper.ProductMapper;
+import com.wyc21.mapper.CategoryMapper;
 import com.wyc21.util.PageResult;
+import com.wyc21.util.SnowflakeIdGenerator;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.util.Date;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 @Slf4j
 @SpringBootTest
+@Transactional
 public class ProductServiceTests {
 
     @Autowired
     private ProductService productService;
+
+    @Autowired
+    private DatabaseInitService databaseInitService;
+
+    @Autowired
+    private ProductMapper productMapper;
+
+    @Autowired
+    private CategoryMapper categoryMapper;
+
+    @Autowired
+    private SnowflakeIdGenerator idGenerator;
+
+    @BeforeEach
+    void setUp() {
+        // 1. 初始化数据库
+        databaseInitService.initializeDatabase();
+
+        // 2. 创建测试分类
+        Category category = createTestCategory("电子产品");
+
+        // 3. 创建测试商品
+        createTestProduct("iPhone 15", new BigDecimal("6999.00"), category.getCategoryId(), 
+                "苹果最新旗舰手机", "Apple", "手机,苹果,iPhone");
+        createTestProduct("MacBook Pro", new BigDecimal("12999.00"), category.getCategoryId(),
+                "强大的专业笔记本", "Apple", "笔记本,苹果,MacBook");
+        createTestProduct("iPad Pro", new BigDecimal("6299.00"), category.getCategoryId(),
+                "专业平板电脑", "Apple", "平板,苹果,iPad");
+    }
+
+    private Category createTestCategory(String name) {
+        Category category = new Category();
+        category.setCategoryId(idGenerator.nextId());
+        category.setName(name);
+        categoryMapper.insert(category);
+        return category;
+    }
+
+    private Product createTestProduct(String name, BigDecimal price, Long categoryId, 
+            String description, String brand, String tags) {
+        Product product = new Product();
+        product.setProductId(idGenerator.nextId());
+        product.setName(name);
+        product.setDescription(description);
+        product.setPrice(price);
+        product.setStock(100);
+        product.setCategoryId(categoryId);
+        product.setBrand(brand);
+        product.setTags(tags);
+        product.setRating(new BigDecimal("4.5"));
+        product.setReviewCount(50);
+        product.setImageUrl("http://example.com/images/" + name.toLowerCase().replace(" ", "-") + ".jpg");
+        product.setIsActive(true);
+       
+        productMapper.insert(product);
+        return product;
+    }
 
     @Test
     public void testGetProducts() {
@@ -75,11 +142,9 @@ public class ProductServiceTests {
     public void testSearchProducts() {
         log.info("开始测试搜索商品");
 
-        // 测试搜索iPhone相关商品
         String keyword = "iPhone";
         PageResult<Product> result = productService.getProducts(null, keyword, 1, 10);
 
-        // 验证结果
         assertNotNull(result, "搜索结果不应为空");
         assertFalse(result.getList().isEmpty(), "搜索结果列表不应为空");
 
@@ -87,8 +152,8 @@ public class ProductServiceTests {
         result.getList().forEach(product -> {
             boolean containsKeyword = product.getName().contains(keyword) ||
                     product.getDescription().contains(keyword) ||
-                    product.getBrand().contains(keyword) ||
-                    product.getTags().contains(keyword);
+                    product.getBrand().contains(keyword);
+            // 移除了tags的检查，因为可能为null
 
             assertTrue(containsKeyword, "搜索结果应包含关键词");
         });

@@ -6,12 +6,24 @@ import java.util.List;
 
 @Mapper
 public interface CategoryMapper {
-    // 获取所有分类
+    // 插入分类
+    void insert(Category category);
+
+    // 根据ID查询分类
+    Category findById(Long categoryId);
+
+    // 查询所有分类
     List<Category> findAll();
 
-    // 获取顶级分类
-    List<Category> findParentCategories();
+    // 查询顶级分类
+    List<Category> findRootCategories();
 
-    // 获取子分类
+    // 查询子分类
     List<Category> findChildCategories(Long parentId);
+
+    // 更新分类
+    void update(Category category);
+
+    // 删除分类
+    void delete(Long categoryId);
 }

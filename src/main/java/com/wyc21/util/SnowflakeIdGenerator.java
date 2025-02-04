@@ -10,7 +10,7 @@ public class SnowflakeIdGenerator {
     private final long maxWorkerId = -1L ^ (-1L << workerIdBits);
     private final long maxDatacenterId = -1L ^ (-1L << datacenterIdBits);
     private final long sequenceBits = 12L;
-    
+
     private final long workerIdShift = sequenceBits;
     private final long datacenterIdShift = sequenceBits + workerIdBits;
     private final long timestampLeftShift = sequenceBits + workerIdBits + datacenterIdBits;
@@ -57,4 +57,4 @@ public class SnowflakeIdGenerator {
     private long timeGen() {
         return System.currentTimeMillis();
     }
-} 
+}

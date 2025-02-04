@@ -1,7 +1,7 @@
 package com.wyc21.entity;
 
 import java.math.BigDecimal;
-import java.util.List;
+import java.util.Date;
 
 import lombok.Data;
 
@@ -13,13 +13,10 @@ public class Product extends BaseEntity {
     private BigDecimal price; // 商品价格
     private Integer stock; // 库存
     private Long categoryId; // 分类ID
-    private String sku; // 库存单位
     private String brand; // 品牌
     private String tags; // 标签
+    private String imageUrl; // 主图URL
     private BigDecimal rating; // 评分
     private Integer reviewCount; // 评论数
-    private Integer lowStockThreshold; // 库存预警阈值
-    private Integer isActive; // 是否上架
-    private String imageUrl; // 主图URL
-    private List<ProductReview> reviews; // 添加评论列表字段
+    private Boolean isActive; // 是否上架
 }

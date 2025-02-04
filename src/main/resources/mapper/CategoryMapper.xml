@@ -6,19 +6,49 @@
         <id property="categoryId" column="category_id"/>
         <result property="name" column="name"/>
         <result property="parentCategoryId" column="parent_category_id"/>
+        <collection property="children" ofType="com.wyc21.entity.Category" 
+                    column="category_id" select="findChildCategories"/>
     </resultMap>
     
-    <select id="findAll" resultMap="CategoryMap">
-        SELECT * FROM wz_categories
+    <insert id="insert" parameterType="com.wyc21.entity.Category">
+        INSERT INTO wz_categories (
+            category_id, name, parent_category_id,
+            created_time, modified_time
+        ) VALUES (
+            #{categoryId}, #{name}, #{parentCategoryId},
+            NOW(), NOW()
+        )
+    </insert>
+    
+    <select id="findById" resultMap="CategoryMap">
+        SELECT * FROM wz_categories WHERE category_id = #{categoryId}
     </select>
     
-    <select id="findParentCategories" resultMap="CategoryMap">
+    <select id="findAll" resultMap="CategoryMap">
+        SELECT * FROM wz_categories ORDER BY created_time DESC
+    </select>
+    
+    <select id="findRootCategories" resultMap="CategoryMap">
         SELECT * FROM wz_categories 
-        WHERE parent_category_id IS NULL
+        WHERE parent_category_id IS NULL 
+        ORDER BY created_time DESC
     </select>
     
     <select id="findChildCategories" resultMap="CategoryMap">
         SELECT * FROM wz_categories 
         WHERE parent_category_id = #{parentId}
+        ORDER BY created_time DESC
     </select>
+    
+    <update id="update" parameterType="com.wyc21.entity.Category">
+        UPDATE wz_categories
+        SET name = #{name},
+            parent_category_id = #{parentCategoryId},
+            modified_time = NOW()
+        WHERE category_id = #{categoryId}
+    </update>
+    
+    <delete id="delete">
+        DELETE FROM wz_categories WHERE category_id = #{categoryId}
+    </delete>
 </mapper> 

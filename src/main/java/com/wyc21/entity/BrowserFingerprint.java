@@ -9,4 +9,4 @@ public class BrowserFingerprint {
     private LocalDateTime firstSeenTime;
     private LocalDateTime lastSeenTime;
     private Long userId;
-} 
+}

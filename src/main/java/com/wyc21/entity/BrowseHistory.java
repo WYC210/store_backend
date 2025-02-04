@@ -10,4 +10,4 @@ public class BrowseHistory {
     private Long userId;
     private Long productId;
     private LocalDateTime browseTime;
-} 
+}

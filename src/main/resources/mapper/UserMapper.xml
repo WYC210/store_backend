@@ -28,17 +28,11 @@
     <!-- 插入用户数据 -->
     <insert id="insert" parameterType="com.wyc21.entity.User">
         INSERT INTO wz_users (
-            uid,
-            username, password, power, phone, email, 
-            gender, avatar, is_delete, 
-            created_user, created_time, 
-            modified_user, modified_time
+            uid, username, password, email, 
+            power, created_time, modified_time
         ) VALUES (
-            #{uid},
-            #{username}, #{password}, #{power}, #{phone}, #{email}, 
-            #{gender}, #{avatar}, #{isDelete}, 
-            #{createdUser}, #{createdTime}, 
-            #{modifiedUser}, #{modifiedTime}
+            #{uid}, #{username}, #{password}, #{email},
+            #{power}, NOW(), NOW()
         )
     </insert>
 
