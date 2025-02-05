@@ -30,32 +30,38 @@ INSERT INTO wz_id_generator (id_type, current_max_id, step, version) VALUES
 ('order', 1000, 100, 1);
 
 -- 2. 初始化用户数据
-INSERT INTO wz_users (uid, username, password, email, power, created_user, created_time, modified_user, modified_time) VALUES
-(1, 'admin', 'e10adc3949ba59abbe56e057f20f883e', 'admin@example.com', 'admin', 'system', NOW(), 'system', NOW()),
-(2, 'test1', 'e10adc3949ba59abbe56e057f20f883e', 'test1@example.com', 'user', 'system', NOW(), 'system', NOW()),
-(3, 'test2', 'e10adc3949ba59abbe56e057f20f883e', 'test2@example.com', 'user', 'system', NOW(), 'system', NOW());
+INSERT INTO wz_users (
+    uid, username, password, power, phone, email, gender, avatar, 
+    is_delete, created_user, created_time, modified_user, modified_time
+) VALUES 
+(1, 'admin', 'e10adc3949ba59abbe56e057f20f883e', 'admin', '13800138000', 'admin@example.com', 1, '/images/avatar/default.png',
+    false, 'system', NOW(), 'system', NOW()),
+(2, 'test1', 'e10adc3949ba59abbe56e057f20f883e', 'user', '13800138001', 'test1@example.com', 1, '/images/avatar/default.png',
+    false, 'system', NOW(), 'system', NOW()),
+(3, 'test2', 'e10adc3949ba59abbe56e057f20f883e', 'user', '13800138002', 'test2@example.com', 0, '/images/avatar/default.png',
+    false, 'system', NOW(), 'system', NOW());
 
 -- 3. 初始化分类数据
-INSERT INTO wz_categories (category_id, name, parent_id, level, sort_order, is_active, create_time, modify_time) VALUES
+INSERT INTO wz_categories (category_id, name, parent_id, level, sort_order, is_active, created_user, created_time, modify_time) VALUES
 -- 先插入父分类
-(1, '电子产品', NULL, 1, 1, true, NOW(), NOW()),
-(2, '服装', NULL, 1, 2, true, NOW(), NOW()),
-(3, '图书', NULL, 1, 3, true, NOW(), NOW()),
+(1, '电子产品', NULL, 1, 1, true, 'system', NOW(), NOW()),
+(2, '服装', NULL, 1, 2, true, 'system', NOW(), NOW()),
+(3, '图书', NULL, 1, 3, true, 'system', NOW(), NOW()),
 -- 再插入子分类
-(11, '手机', 1, 2, 1, true, NOW(), NOW()),
-(12, '电脑', 1, 2, 2, true, NOW(), NOW()),
-(21, '男装', 2, 2, 1, true, NOW(), NOW()),
-(22, '女装', 2, 2, 2, true, NOW(), NOW()),
-(31, '小说', 3, 2, 1, true, NOW(), NOW()),
-(32, '教育', 3, 2, 2, true, NOW(), NOW());
+(11, '手机', 1, 2, 1, true, 'system', NOW(), NOW()),
+(12, '电脑', 1, 2, 2, true, 'system', NOW(), NOW()),
+(21, '男装', 2, 2, 1, true, 'system', NOW(), NOW()),
+(22, '女装', 2, 2, 2, true, 'system', NOW(), NOW()),
+(31, '小说', 3, 2, 1, true, 'system', NOW(), NOW()),
+(32, '教育', 3, 2, 2, true, 'system', NOW(), NOW());
 
 -- 4. 初始化商品数据
-INSERT INTO wz_products (product_id, name, description, price, stock, category_id, brand, tags, rating, review_count, image_url, is_active, create_time, modify_time) VALUES
-(1, 'iPhone 14', '苹果最新旗舰手机', 6999.00, 100, 11, 'Apple', '手机,苹果,5G', 4.8, 120, '/images/products/iphone14.jpg', true, NOW(), NOW()),
-(2, 'MacBook Pro', '专业级笔记本电脑', 12999.00, 50, 12, 'Apple', '笔记本,苹果,电脑', 4.9, 80, '/images/products/macbook.jpg', true, NOW(), NOW()),
-(3, '男士休闲夹克', '舒适百搭的夹克外套', 299.00, 200, 21, 'Brand A', '外套,夹克,男装', 4.5, 50, '/images/products/jacket.jpg', true, NOW(), NOW()),
-(4, '连衣裙', '优雅时尚连衣裙', 199.00, 150, 22, 'Brand B', '裙子,女装,春装', 4.7, 65, '/images/products/dress.jpg', true, NOW(), NOW()),
-(5, '三体全集', '刘慈欣科幻小说', 99.00, 300, 31, '重庆出版社', '科幻,小说,畅销书', 4.9, 200, '/images/products/santi.jpg', true, NOW(), NOW());
+INSERT INTO wz_products (product_id, name, description, price, stock, category_id, brand, tags, rating, review_count, image_url, is_active, created_user, created_time, modify_time) VALUES
+(1, 'iPhone 14', '苹果最新旗舰手机', 6999.00, 100, 11, 'Apple', '手机,苹果,5G', 4.8, 120, '/images/products/iphone14.jpg', true, 'system', NOW(), NOW()),
+(2, 'MacBook Pro', '专业级笔记本电脑', 12999.00, 50, 12, 'Apple', '笔记本,苹果,电脑', 4.9, 80, '/images/products/macbook.jpg', true, 'system', NOW(), NOW()),
+(3, '男士休闲夹克', '舒适百搭的夹克外套', 299.00, 200, 21, 'Brand A', '外套,夹克,男装', 4.5, 50, '/images/products/jacket.jpg', true, 'system', NOW(), NOW()),
+(4, '连衣裙', '优雅时尚连衣裙', 199.00, 150, 22, 'Brand B', '裙子,女装,春装', 4.7, 65, '/images/products/dress.jpg', true, 'system', NOW(), NOW()),
+(5, '三体全集', '刘慈欣科幻小说', 99.00, 300, 31, '重庆出版社', '科幻,小说,畅销书', 4.9, 200, '/images/products/santi.jpg', true, 'system', NOW(), NOW());
 
 -- 5. 初始化商品图片数据
 INSERT INTO wz_product_images (image_id, product_id, image_url, is_primary) VALUES

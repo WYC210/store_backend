@@ -60,7 +60,7 @@ public class UserServiceImpl implements IUserService {
         user.setPassword(PasswordUtils.hashPassword(user.getPassword()));
 
         // 补全数据
-        user.setIsDelete(0);
+        user.setIsDelete(false);
         user.setCreatedUser(user.getUsername());
         user.setModifiedUser(user.getUsername());
         Date date = new Date();
@@ -107,7 +107,7 @@ public class UserServiceImpl implements IUserService {
         }
 
         // 判断用户是否被删除
-        if (result.getIsDelete() == 1) {
+        if (result.getIsDelete() == true) {
             throw new UserNotFoundException("用户不存在");
         }
 
@@ -153,7 +153,7 @@ public class UserServiceImpl implements IUserService {
     @Override
     public User getUserById(Long uid) {
         User result = userMapper.findByUid(uid);
-        if (result == null || result.getIsDelete() == 1) {
+        if (result == null || result.getIsDelete() == true) {
             throw new UserNotFoundException("用户不存在");
         }
 
@@ -176,7 +176,7 @@ public class UserServiceImpl implements IUserService {
     public User updateUserInfo(User user) {
         // 获取原用户信息
         User result = userMapper.findByUid(user.getUid());
-        if (result == null || result.getIsDelete() == 1) {
+        if (result == null || result.getIsDelete() == true) {
             throw new UserNotFoundException("用户不存在");
         }
 
@@ -204,7 +204,7 @@ public class UserServiceImpl implements IUserService {
     public void updatePassword(Long uid, String oldPassword, String newPassword) {
         // 获取用户信息
         User result = userMapper.findByUid(uid);
-        if (result == null || result.getIsDelete() == 1) {
+        if (result == null || result.getIsDelete() == true) {
             throw new UserNotFoundException("用户不存在");
         }
 

@@ -2,9 +2,8 @@ package com.wyc21.service.impl;
 
 import com.wyc21.entity.Product;
 import com.wyc21.entity.ProductReview;
-
 import com.wyc21.service.ProductService;
-import com.wyc21.util.PageResult;
+import com.wyc21.entity.PageResult;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -19,23 +18,20 @@ public class ProductServiceImpl implements ProductService {
     private ProductMapper productMapper;
     
     @Override
-    public PageResult<Product> getProducts(Long categoryId, String keyword, int page, int size) {
+    public PageResult<Product> getProducts(Long categoryId, String keyword, int pageNum, int pageSize) {
+        // 验证并修正分页参数
+        pageNum = Math.max(1, pageNum);  // 页码最小为1
+        pageSize = Math.max(1, pageSize);  // 每页大小最小为1
+        
         // 计算偏移量
-        int offset = (page - 1) * size;
+        int offset = (pageNum - 1) * pageSize;
         
         // 查询数据
-        List<Product> products = productMapper.findProducts(categoryId, keyword, offset, size);
-        int total = productMapper.countProducts(categoryId, keyword);
+        List<Product> products = productMapper.findProducts(categoryId, keyword, offset, pageSize);
+        long total = productMapper.countProducts(categoryId, keyword);
         
-        // 构建分页结果
-        PageResult<Product> result = new PageResult<>();
-        result.setList(products);
-        result.setTotal(total);
-        result.setPages((total + size - 1) / size);
-        result.setPageNum(page);
-        result.setPageSize(size);
-        
-        return result;
+        // 返回分页结果
+        return new PageResult<>(products, total, pageNum, pageSize);
     }
     
     @Override

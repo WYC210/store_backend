@@ -95,9 +95,8 @@ public class DatabaseInitService {
 
     private void executeTableCreation(String sql, String tableName) {
         Pattern pattern = Pattern.compile(
-            "CREATE TABLE(?: IF NOT EXISTS)? " + tableName + "[^;]+;",
-            Pattern.CASE_INSENSITIVE | Pattern.DOTALL
-        );
+                "CREATE TABLE(?: IF NOT EXISTS)? " + tableName + "[^;]+;",
+                Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
         Matcher matcher = pattern.matcher(sql);
         if (matcher.find()) {
             String createTableSql = matcher.group();

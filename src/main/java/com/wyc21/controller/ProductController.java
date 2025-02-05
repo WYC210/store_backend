@@ -2,8 +2,8 @@ package com.wyc21.controller;
 
 import com.wyc21.entity.Product;
 import com.wyc21.entity.ProductReview;
+import com.wyc21.entity.PageResult;
 import com.wyc21.service.ProductService;
-import com.wyc21.util.PageResult;
 import com.wyc21.util.JsonResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -11,27 +11,24 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/products")
+@RequestMapping("/api/products")
 public class ProductController extends BaseController {
 
     @Autowired
     private ProductService productService;
 
     @GetMapping
-    public JsonResult<PageResult<Product>> getProducts(
+    public PageResult<Product> getProducts(
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) String keyword,
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int size) {
-
-        PageResult<Product> result = productService.getProducts(categoryId, keyword, page, size);
-        return new JsonResult<>(OK, result);
+            @RequestParam(defaultValue = "1") int pageNum,
+            @RequestParam(defaultValue = "10") int pageSize) {
+        return productService.getProducts(categoryId, keyword, pageNum, pageSize);
     }
 
-    @GetMapping("/{productId}")
-    public JsonResult<Product> getProduct(@PathVariable Long productId) {
-        Product product = productService.getProduct(productId);
-        return new JsonResult<>(OK, product);
+    @GetMapping("/{id}")
+    public Product getProduct(@PathVariable Long id) {
+        return productService.getProduct(id);
     }
 
     @GetMapping("/{productId}/reviews")

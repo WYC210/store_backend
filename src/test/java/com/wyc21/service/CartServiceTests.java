@@ -1,11 +1,11 @@
 package com.wyc21.service;
 
-import com.wyc21.dto.CartItemDTO;
-import com.wyc21.entity.Product;
-import com.wyc21.entity.User;
-import com.wyc21.service.ex.BusinessException;
-import com.wyc21.mapper.ProductMapper;
-import com.wyc21.mapper.UserMapper;
+import com.wyc21.entity.Cart;
+import com.wyc21.entity.CartItem;
+import com.wyc21.service.ex.CartNotFoundException;
+import com.wyc21.service.ex.ProductNotFoundException;
+import com.wyc21.service.ex.UserNotFoundException;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,117 +17,149 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@Slf4j
 @SpringBootTest
 @Transactional
-class CartServiceTests {
+public class CartServiceTests {
 
     @Autowired
-    private CartService cartService;
+    private ICartService cartService;
 
     @Autowired
-    private ProductMapper productMapper;
-
-    @Autowired
-    private UserMapper userMapper;
-
-    private Long userId;
-    private Long productId;
+    private DatabaseInitService databaseInitService;
 
     @BeforeEach
     void setUp() {
-        // 创建测试用户
-        User user = new User();
-        user.setUid(1001L);
-        user.setUsername("test_user");
-        user.setPassword("password123");
-        user.setEmail("test@example.com");
-        user.setPower("user");
-        userMapper.insert(user);
-        userId = user.getUid();
-
-        // 创建测试商品
-        Product product = new Product();
-        product.setProductId(1001L);
-        product.setName("测试商品");
-        product.setPrice(new BigDecimal("99.99"));
-        product.setStock(100);
-        productMapper.insert(product);
-        productId = product.getProductId();
+        databaseInitService.initializeDatabase();
     }
 
     @Test
-    void testAddToCart() {
-        CartItemDTO item = new CartItemDTO();
-        item.setProductId(productId);
-        item.setQuantity(2);
+    public void testAddToCart() {
+        log.info("开始测试添加商品到购物车");
 
-        // 测试添加商品到购物车
-        assertDoesNotThrow(() -> cartService.addToCart(userId, item));
+        Long userId = 2L;
+        Long productId = 1L; // iPhone 14
+        Integer quantity = 1;
 
-        // 验证商品是否在购物车中
-        assertTrue(cartService.isProductInCart(userId, productId));
+        CartItem cartItem = cartService.addToCart(userId, productId, quantity);
 
-        // 验证购物车商品列表
-        List<CartItemDTO> cartItems = cartService.getUserCart(userId);
-        assertEquals(1, cartItems.size());
-        assertEquals(productId, cartItems.get(0).getProductId());
-        assertEquals(2, cartItems.get(0).getQuantity());
+        assertNotNull(cartItem, "购物车项不应为null");
+        assertEquals(productId, cartItem.getProductId(), "商品ID应匹配");
+        assertEquals(quantity, cartItem.getQuantity(), "商品数量应匹配");
+        assertEquals(new BigDecimal("6999.00"), cartItem.getPrice(), "商品价格应匹配");
+        assertEquals("iPhone 14", cartItem.getProductName(), "商品名称应匹配");
+
+        log.info("添加购物车测试完成");
     }
 
     @Test
-    void testUpdateQuantity() {
-        // 先添加商品到购物车
-        CartItemDTO item = new CartItemDTO();
-        item.setProductId(productId);
-        item.setQuantity(1);
-        cartService.addToCart(userId, item);
+    public void testAddToCartWithInvalidUser() {
+        log.info("开始测试无效用户添加购物车");
 
-        // 测试更新数量
-        assertDoesNotThrow(() -> cartService.updateQuantity(userId, productId, 3));
+        Long invalidUserId = 999L;
+        Long productId = 1L;
+        Integer quantity = 1;
 
-        // 验证数量是否更新
-        List<CartItemDTO> cartItems = cartService.getUserCart(userId);
-        assertEquals(3, cartItems.get(0).getQuantity());
+        assertThrows(UserNotFoundException.class, () -> {
+            cartService.addToCart(invalidUserId, productId, quantity);
+        });
+
+        log.info("无效用户测试完成");
     }
 
     @Test
-    void testRemoveFromCart() {
-        // 先添加商品到购物车
-        CartItemDTO item = new CartItemDTO();
-        item.setProductId(productId);
-        item.setQuantity(1);
-        cartService.addToCart(userId, item);
+    public void testAddToCartWithInvalidProduct() {
+        log.info("开始测试添加无效商品");
 
-        // 测试删除商品
-        assertDoesNotThrow(() -> cartService.removeFromCart(userId, productId));
+        Long userId = 2L;
+        Long invalidProductId = 999L;
+        Integer quantity = 1;
 
-        // 验证商品是否已删除
-        assertFalse(cartService.isProductInCart(userId, productId));
-        assertTrue(cartService.getUserCart(userId).isEmpty());
+        assertThrows(ProductNotFoundException.class, () -> {
+            cartService.addToCart(userId, invalidProductId, quantity);
+        });
+
+        log.info("无效商品测试完成");
     }
 
     @Test
-    void testClearCart() {
-        // 添加多个商品到购物车
-        CartItemDTO item1 = new CartItemDTO();
-        item1.setProductId(productId);
-        item1.setQuantity(1);
-        cartService.addToCart(userId, item1);
+    public void testGetCartItems() {
+        log.info("开始测试获取购物车商品列表");
 
-        // 测试清空购物车
-        assertDoesNotThrow(() -> cartService.clearCart(userId));
+        Long userId = 2L;
+        List<CartItem> items = cartService.getCartItems(userId);
 
-        // 验证购物车是否为空
-        assertTrue(cartService.getUserCart(userId).isEmpty());
+        assertNotNull(items, "购物车列表不应为null");
+        assertFalse(items.isEmpty(), "购物车不应为空");
+
+        items.forEach(item -> {
+            log.info("购物车商品: {}", item.getProductName());
+            assertNotNull(item.getCartItemId(), "购物车项ID不应为null");
+            assertNotNull(item.getProductId(), "商品ID不应为null");
+            assertTrue(item.getQuantity() > 0, "商品数量应大于0");
+            assertTrue(item.getPrice().compareTo(BigDecimal.ZERO) > 0, "商品价格应大于0");
+        });
+
+        log.info("获取购物车列表测试完成");
     }
 
     @Test
-    void testAddToCartWithInsufficientStock() {
-        CartItemDTO item = new CartItemDTO();
-        item.setProductId(productId);
-        item.setQuantity(101); // 库存只有100
+    public void testUpdateQuantity() {
+        log.info("开始测试更新购物车商品数量");
 
-        // 测试添加超出库存的商品
-        assertThrows(BusinessException.class, () -> cartService.addToCart(userId, item));
+        Long userId = 2L;
+        Long cartItemId = 1L;
+        Integer newQuantity = 2;
+
+        CartItem updatedItem = cartService.updateQuantity(userId, cartItemId, newQuantity);
+
+        assertNotNull(updatedItem, "更新后的购物车项不应为null");
+        assertEquals(newQuantity, updatedItem.getQuantity(), "商品数量应该更新成功");
+
+        log.info("更新商品数量测试完成");
+    }
+
+    @Test
+    public void testDeleteCartItem() {
+        log.info("开始测试删除购物车商品");
+
+        Long userId = 2L;
+        Long cartItemId = 1L;
+
+        cartService.deleteCartItem(userId, cartItemId);
+
+        // 验证删除后无法找到该商品
+        assertThrows(CartNotFoundException.class, () -> {
+            cartService.getCartItem(userId, cartItemId);
+        });
+
+        log.info("删除购物车商品测试完成");
+    }
+
+    @Test
+    public void testClearCart() {
+        log.info("开始测试清空购物车");
+
+        Long userId = 2L;
+        cartService.clearCart(userId);
+
+        List<CartItem> items = cartService.getCartItems(userId);
+        assertTrue(items.isEmpty(), "购物车应该为空");
+
+        log.info("清空购物车测试完成");
+    }
+
+    @Test
+    public void testGetCartTotal() {
+        log.info("开始测试获取购物车总金额");
+
+        Long userId = 2L;
+        BigDecimal total = cartService.getCartTotal(userId);
+
+        assertNotNull(total, "总金额不应为null");
+        assertTrue(total.compareTo(BigDecimal.ZERO) >= 0, "总金额应该大于等于0");
+
+        log.info("购物车总金额: {}", total);
+        log.info("获取购物车总金额测试完成");
     }
 }

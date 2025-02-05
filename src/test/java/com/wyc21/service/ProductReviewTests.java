@@ -5,7 +5,7 @@ import com.wyc21.entity.ProductReview;
 import com.wyc21.entity.Category;
 import com.wyc21.mapper.ProductMapper;
 import com.wyc21.mapper.CategoryMapper;
-import com.wyc21.util.PageResult;
+import com.wyc21.entity.PageResult;
 import com.wyc21.util.SnowflakeIdGenerator;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
@@ -91,7 +91,11 @@ public class ProductReviewTests {
         assertNotNull(result, "返回结果不应为空");
         assertNotNull(result.getList(), "商品列表不应为空");
         assertFalse(result.getList().isEmpty(), "商品列表不应为空");
+        assertTrue(result.getTotal() > 0, "总记录数应大于0");
+        assertEquals(1, result.getPageNum(), "当前页码应为1");
+        assertEquals(5, result.getPageSize(), "每页大小应为5");
 
+        // 验证商品评论信息
         result.getList().forEach(product -> {
             log.info("商品: {} (ID: {})", product.getName(), product.getProductId());
             log.info("评分: {}", product.getRating());

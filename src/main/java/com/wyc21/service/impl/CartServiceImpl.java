@@ -1,22 +1,26 @@
 package com.wyc21.service.impl;
 
-import com.wyc21.dto.CartItemDTO;
 import com.wyc21.entity.Cart;
 import com.wyc21.entity.CartItem;
 import com.wyc21.entity.Product;
-import com.wyc21.service.ex.BusinessException;
+import com.wyc21.entity.User;
+import com.wyc21.service.ICartService;
+import com.wyc21.service.ex.CartNotFoundException;
+import com.wyc21.service.ex.ProductNotFoundException;
+import com.wyc21.service.ex.UserNotFoundException;
 import com.wyc21.mapper.CartMapper;
 import com.wyc21.mapper.ProductMapper;
-import com.wyc21.service.CartService;
+import com.wyc21.mapper.UserMapper;
 import com.wyc21.util.SnowflakeIdGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Service
-public class CartServiceImpl implements CartService {
+public class CartServiceImpl implements ICartService {
 
     @Autowired
     private CartMapper cartMapper;
@@ -25,20 +29,29 @@ public class CartServiceImpl implements CartService {
     private ProductMapper productMapper;
 
     @Autowired
+    private UserMapper userMapper;
+
+    @Autowired
     private SnowflakeIdGenerator idGenerator;
 
     @Override
     @Transactional
-    public void addToCart(Long userId, CartItemDTO itemDTO) {
+    public CartItem addToCart(Long userId, Long productId, Integer quantity) {
+        // 检查用户是否存在
+        User user = userMapper.findByUid(userId);
+        if (user == null) {
+            throw new UserNotFoundException("用户不存在");
+        }
+
         // 检查商品是否存在
-        Product product = productMapper.findById(itemDTO.getProductId());
+        Product product = productMapper.findById(productId);
         if (product == null) {
-            throw new BusinessException("商品不存在");
+            throw new ProductNotFoundException("商品不存在");
         }
 
         // 检查库存
-        if (product.getStock() < itemDTO.getQuantity()) {
-            throw new BusinessException("商品库存不足");
+        if (product.getStock() < quantity) {
+            throw new ProductNotFoundException("商品库存不足");
         }
 
         // 检查购物车是否存在
@@ -47,64 +60,71 @@ public class CartServiceImpl implements CartService {
             cart = new Cart();
             cart.setCartId(idGenerator.nextId());
             cart.setUserId(userId);
+            cart.setCreatedUser("system");
             cartMapper.insert(cart);
         }
 
         // 检查商品是否已在购物车中
-        CartItem existingItem = cartMapper.findCartItem(cart.getCartId(), itemDTO.getProductId());
+        CartItem existingItem = cartMapper.findCartItem(cart.getCartId(), productId);
         if (existingItem != null) {
-            // 更新数量
-            existingItem.setQuantity(existingItem.getQuantity() + itemDTO.getQuantity());
+            // 直接更新为新的数量，而不是相加
+            existingItem.setQuantity(quantity);
             cartMapper.updateCartItem(existingItem);
+            return existingItem;
         } else {
             // 添加新商品
             CartItem newItem = new CartItem();
             newItem.setCartItemId(idGenerator.nextId());
             newItem.setCartId(cart.getCartId());
-            newItem.setProductId(itemDTO.getProductId());
-            newItem.setQuantity(itemDTO.getQuantity());
+            newItem.setProductId(productId);
+            newItem.setQuantity(quantity);
             newItem.setPrice(product.getPrice());
             newItem.setProductName(product.getName());
+            newItem.setCreatedUser("system");
             cartMapper.insertCartItem(newItem);
+            return newItem;
         }
     }
 
     @Override
-    @Transactional
-    public void updateQuantity(Long userId, Long productId, Integer quantity) {
+    public List<CartItem> getCartItems(Long userId) {
+        return cartMapper.findCartItems(userId);
+    }
+
+    @Override
+    public CartItem getCartItem(Long userId, Long cartItemId) {
         Cart cart = cartMapper.findByUserId(userId);
         if (cart == null) {
-            throw new BusinessException("购物车不存在");
+            throw new CartNotFoundException("购物车不存在");
         }
+        CartItem item = cartMapper.findCartItemById(cartItemId);
+        if (item == null || !item.getCartId().equals(cart.getCartId())) {
+            throw new CartNotFoundException("购物车商品不存在");
+        }
+        return item;
+    }
 
-        CartItem item = cartMapper.findCartItem(cart.getCartId(), productId);
-        if (item == null) {
-            throw new BusinessException("商品不在购物车中");
-        }
+    @Override
+    @Transactional
+    public CartItem updateQuantity(Long userId, Long cartItemId, Integer quantity) {
+        CartItem item = getCartItem(userId, cartItemId);
 
         // 检查库存
-        Product product = productMapper.findById(productId);
+        Product product = productMapper.findById(item.getProductId());
         if (product.getStock() < quantity) {
-            throw new BusinessException("商品库存不足");
+            throw new ProductNotFoundException("商品库存不足");
         }
 
         item.setQuantity(quantity);
         cartMapper.updateCartItem(item);
+        return item;
     }
 
     @Override
     @Transactional
-    public void removeFromCart(Long userId, Long productId) {
-        Cart cart = cartMapper.findByUserId(userId);
-        if (cart == null) {
-            return;
-        }
-        cartMapper.deleteCartItem(cart.getCartId(), productId);
-    }
-
-    @Override
-    public List<CartItemDTO> getUserCart(Long userId) {
-        return cartMapper.findCartItems(userId);
+    public void deleteCartItem(Long userId, Long cartItemId) {
+        CartItem item = getCartItem(userId, cartItemId);
+        cartMapper.deleteCartItem(item.getCartId(), item.getProductId());
     }
 
     @Override
@@ -117,12 +137,10 @@ public class CartServiceImpl implements CartService {
     }
 
     @Override
-    public boolean isProductInCart(Long userId, Long productId) {
-        Cart cart = cartMapper.findByUserId(userId);
-        if (cart == null) {
-            return false;
-        }
-        CartItem item = cartMapper.findCartItem(cart.getCartId(), productId);
-        return item != null;
+    public BigDecimal getCartTotal(Long userId) {
+        List<CartItem> items = getCartItems(userId);
+        return items.stream()
+                .map(item -> item.getPrice().multiply(new BigDecimal(item.getQuantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 }

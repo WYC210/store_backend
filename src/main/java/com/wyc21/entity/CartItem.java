@@ -2,7 +2,7 @@ package com.wyc21.entity;
 
 import lombok.Data;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.util.Date;
 
 @Data
 public class CartItem {
@@ -12,6 +12,7 @@ public class CartItem {
     private Integer quantity;
     private BigDecimal price;
     private String productName;
-    private LocalDateTime createdTime;
-    private LocalDateTime modifiedTime;
+    private String createdUser;
+    private Date createdTime;
+    private Date modifiedTime;
 }

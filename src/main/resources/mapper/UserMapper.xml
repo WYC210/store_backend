@@ -28,16 +28,16 @@
     <!-- 插入用户数据 -->
     <insert id="insert" parameterType="com.wyc21.entity.User">
         INSERT INTO wz_users (
-            uid, username, password, email, 
-            power, created_time, modified_time
+            uid, username, password, power, phone, email, gender, avatar,
+            created_user, created_time, modified_user, modified_time
         ) VALUES (
-            #{uid}, #{username}, #{password}, #{email},
-            #{power}, NOW(), NOW()
+            #{uid}, #{username}, #{password}, #{power}, #{phone}, #{email}, #{gender}, #{avatar},
+            #{createdUser}, NOW(), #{modifiedUser}, NOW()
         )
     </insert>
 
     <!-- 根据用户名查询用户数据 -->
-    <select id="findByUsername" resultType="com.wyc21.entity.User">
+    <select id="findByUsername" resultMap="UserEntityMap">
         SELECT 
             uid, username, password, power, phone, email, gender, avatar,
             is_delete, created_user, created_time, modified_user, modified_time
@@ -48,10 +48,8 @@
     <!-- 根据用户id查询用户数据 -->
     <select id="findByUid" resultMap="UserEntityMap">
         SELECT 
-            uid, username, power, phone, email, 
-            gender, avatar, is_delete, 
-            created_user, created_time, 
-            modified_user, modified_time
+            uid, username, power, phone, email, gender, avatar, is_delete,
+            created_user, created_time, modified_user, modified_time
         FROM wz_users 
         WHERE uid = #{uid}
     </select>
@@ -65,7 +63,7 @@
             <if test="gender != null">gender = #{gender},</if>
             <if test="avatar != null">avatar = #{avatar},</if>
             modified_user = #{modifiedUser},
-            modified_time = #{modifiedTime}
+            modified_time = NOW()
         </set>
         WHERE uid = #{uid}
     </update>
@@ -76,7 +74,7 @@
         SET 
             password = #{password},
             modified_user = #{modifiedUser},
-            modified_time = #{modifiedTime}
+            modified_time = NOW()
         WHERE uid = #{uid}
     </update>
 

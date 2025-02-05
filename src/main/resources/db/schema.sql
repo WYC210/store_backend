@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS wz_categories (
     sort_order INT NOT NULL,
     is_active BOOLEAN DEFAULT TRUE,
     created_user VARCHAR(50) NOT NULL DEFAULT 'system',  -- 创建者
-    create_time DATETIME NOT NULL,
+    created_time DATETIME NOT NULL,
     modify_time DATETIME NOT NULL,
     FOREIGN KEY (parent_id) REFERENCES wz_categories(category_id)
 );
@@ -60,7 +60,7 @@ CREATE TABLE IF NOT EXISTS wz_products (
     image_url VARCHAR(200),
     is_active BOOLEAN DEFAULT TRUE,
     created_user VARCHAR(50) NOT NULL DEFAULT 'system',  -- 创建者
-    create_time DATETIME NOT NULL,
+    created_time DATETIME NOT NULL,
     modify_time DATETIME NOT NULL,
     FOREIGN KEY (category_id) REFERENCES wz_categories(category_id)
 );
@@ -69,13 +69,18 @@ CREATE TABLE IF NOT EXISTS wz_products (
 CREATE TABLE IF NOT EXISTS wz_users (
     uid BIGINT PRIMARY KEY,
     username VARCHAR(50) NOT NULL UNIQUE,
-    password VARCHAR(100) NOT NULL,
-    email VARCHAR(100) NOT NULL UNIQUE,
-    power VARCHAR(20) NOT NULL DEFAULT 'user',
-    created_user VARCHAR(50) NOT NULL DEFAULT 'system',  -- 添加创建者字段
-    created_time DATETIME NOT NULL,
-    modified_user VARCHAR(50),                          -- 添加修改者字段
-    modified_time DATETIME NOT NULL
+    password VARCHAR(100) NOT NULL,  -- 修改为 100 以适应加密后的密码长度
+    power VARCHAR(20) NOT NULL DEFAULT 'user',  -- 用户权限：admin/user
+    phone VARCHAR(20),                          -- 添加电话字段
+    email VARCHAR(100),                         -- 添加邮箱字段
+    gender TINYINT,                            -- 添加性别字段：0-女，1-男
+    avatar VARCHAR(255),                        -- 添加头像URL字段
+    is_delete BOOLEAN DEFAULT FALSE,            -- 是否删除
+    created_user VARCHAR(50) NOT NULL DEFAULT 'system',
+    created_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    modified_user VARCHAR(50),
+    modified_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_username (username)
 );
 
 -- 创建订单表

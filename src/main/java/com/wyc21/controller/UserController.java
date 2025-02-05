@@ -36,7 +36,7 @@ public class UserController extends BaseController {
         }
 
         // 设置默认值
-        user.setIsDelete(0);
+        user.setIsDelete(false);
         user.setPower("user");
         user.setAvatar("default.jpg");
         user.setGender(0); // 默认性别为未知

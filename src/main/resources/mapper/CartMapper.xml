@@ -3,34 +3,57 @@
     "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.wyc21.mapper.CartMapper">
     
-    <select id="findByUserId" resultType="com.wyc21.entity.Cart">
-        SELECT * FROM wz_carts WHERE user_id = #{userId} AND is_checked_out = 0
+    <resultMap id="CartMap" type="com.wyc21.entity.Cart">
+        <id property="cartId" column="cart_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="createdTime" column="created_time"/>
+        <result property="modifiedTime" column="modified_time"/>
+        <result property="isCheckedOut" column="is_checked_out"/>
+    </resultMap>
+    
+    <resultMap id="CartItemMap" type="com.wyc21.entity.CartItem">
+        <id property="cartItemId" column="cart_item_id"/>
+        <result property="cartId" column="cart_id"/>
+        <result property="productId" column="product_id"/>
+        <result property="quantity" column="quantity"/>
+        <result property="price" column="price"/>
+        <result property="productName" column="product_name"/>
+        <result property="createdUser" column="created_user"/>
+        <result property="createdTime" column="created_time"/>
+        <result property="modifiedTime" column="modified_time"/>
+    </resultMap>
+
+    <select id="findByUserId" resultMap="CartMap">
+        SELECT * FROM wz_carts WHERE user_id = #{userId}
     </select>
     
-    <insert id="insert" parameterType="com.wyc21.entity.Cart">
-        INSERT INTO wz_carts (cart_id, user_id, created_time)
-        VALUES (#{cartId}, #{userId}, NOW())
+    <insert id="insert">
+        INSERT INTO wz_carts (cart_id, user_id, created_user, created_time, modified_time)
+        VALUES (#{cartId}, #{userId}, #{createdUser}, NOW(), NOW())
     </insert>
     
-    <select id="findCartItem" resultType="com.wyc21.entity.CartItem">
+    <select id="findCartItem" resultMap="CartItemMap">
         SELECT * FROM wz_cart_items 
         WHERE cart_id = #{cartId} AND product_id = #{productId}
     </select>
     
-    <insert id="insertCartItem" parameterType="com.wyc21.entity.CartItem">
+    <select id="findCartItemById" resultMap="CartItemMap">
+        SELECT * FROM wz_cart_items WHERE cart_item_id = #{cartItemId}
+    </select>
+    
+    <insert id="insertCartItem">
         INSERT INTO wz_cart_items (
-            cart_item_id, cart_id, product_id, quantity, 
-            price, product_name, created_time
-        )
-        VALUES (
-            #{cartItemId}, #{cartId}, #{productId}, #{quantity}, 
-            #{price}, #{productName}, NOW()
+            cart_item_id, cart_id, product_id, quantity, price, 
+            product_name, created_user, created_time, modified_time
+        ) VALUES (
+            #{cartItemId}, #{cartId}, #{productId}, #{quantity}, #{price},
+            #{productName}, #{createdUser}, NOW(), NOW()
         )
     </insert>
     
-    <update id="updateCartItem" parameterType="com.wyc21.entity.CartItem">
-        UPDATE wz_cart_items 
-        SET quantity = #{quantity}, 
+    <update id="updateCartItem">
+        UPDATE wz_cart_items SET 
+            quantity = #{quantity},
             modified_time = NOW()
         WHERE cart_item_id = #{cartItemId}
     </update>
@@ -40,17 +63,15 @@
         WHERE cart_id = #{cartId} AND product_id = #{productId}
     </delete>
     
-    <select id="findCartItems" resultType="com.wyc21.dto.CartItemDTO">
-        SELECT ci.product_id, ci.quantity, ci.product_name, ci.price,
-               p.image_url
-        FROM wz_cart_items ci
-        JOIN wz_carts c ON ci.cart_id = c.cart_id
-        LEFT JOIN wz_products p ON ci.product_id = p.product_id
-        WHERE c.user_id = #{userId} AND c.is_checked_out = 0
-        ORDER BY ci.created_time DESC
-    </select>
-    
     <delete id="deleteAllCartItems">
         DELETE FROM wz_cart_items WHERE cart_id = #{cartId}
     </delete>
+    
+    <select id="findCartItems" resultMap="CartItemMap">
+        SELECT ci.* 
+        FROM wz_cart_items ci
+        JOIN wz_carts c ON ci.cart_id = c.cart_id
+        WHERE c.user_id = #{userId}
+        ORDER BY ci.created_time DESC
+    </select>
 </mapper> 

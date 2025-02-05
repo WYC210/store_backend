@@ -30,8 +30,8 @@ public class UserServiceTexts {
         System.out.println("\n========== 开始测试登录成功流程 ==========\n");
 
         // 使用数据库中存在的用户
-        String username = "wz";
-        String password = "123456";
+        String username = "test2";
+        String password = "123456"; // 这个密码应该是 MD5 加密后的值
         MockHttpServletRequest request = new MockHttpServletRequest();
         MockHttpServletResponse response = new MockHttpServletResponse();
         request.setRemoteAddr("127.0.0.1");
@@ -52,6 +52,7 @@ public class UserServiceTexts {
             assertNotNull(cookies);
             assertTrue(cookies.length > 0);
         } catch (Exception e) {
+            e.printStackTrace(); // 添加这行来打印详细错误信息
             System.out.println("\n********** 测试失败 **********");
             System.out.println("失败原因：" + e.getMessage());
             fail("登录应该成功，但是失败了：" + e.getMessage());

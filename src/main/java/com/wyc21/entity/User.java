@@ -1,6 +1,7 @@
 package com.wyc21.entity;
 
 import java.io.Serializable;
+import java.util.Date;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -15,6 +16,10 @@ public class User extends BaseEntity implements Serializable {
     private String email;
     private Integer gender;
     private String avatar;
-    private Integer isDelete;
+    private Boolean isDelete;
+    private String createdUser;
+    private Date createdTime;
+    private String modifiedUser;
+    private Date modifiedTime;
     private String token;
 }
