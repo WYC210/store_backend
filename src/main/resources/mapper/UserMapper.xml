@@ -46,7 +46,7 @@
     </select>
 
     <!-- 根据用户id查询用户数据 -->
-    <select id="findByUid" resultMap="UserEntityMap">
+    <select id="findByUid" resultType="com.wyc21.entity.User">
         SELECT 
             uid, username, power, phone, email, gender, avatar, is_delete,
             created_user, created_time, modified_user, modified_time

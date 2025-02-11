@@ -36,10 +36,10 @@ public class UserController extends BaseController {
         }
 
         // 设置默认值
-        user.setIsDelete(false);
+        user.setIsDelete(0);
         user.setPower("user");
         user.setAvatar("default.jpg");
-        user.setGender(0); // 默认性别为未知
+        user.setGender(0);
 
         userService.reg(user);
         return new JsonResult<>(OK, null, "注册成功");

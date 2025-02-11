@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wyc21.mapper.OrderMapper">
+    
+    <resultMap id="OrderItemMap" type="com.wyc21.entity.OrderItem">
+        <id property="orderItemId" column="order_item_id"/>
+        <result property="orderId" column="order_id"/>
+        <result property="productId" column="product_id"/>
+        <result property="productName" column="product_name"/>
+        <result property="quantity" column="quantity"/>
+        <result property="price" column="price"/>
+        <result property="createdUser" column="created_user"/>
+        <result property="createdTime" column="created_time"/>
+        <result property="modifiedUser" column="modified_user"/>
+        <result property="modifiedTime" column="modified_time"/>
+    </resultMap>
+
+    <resultMap id="OrderMap" type="com.wyc21.entity.Order">
+        <id property="orderId" column="order_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="totalAmount" column="total_amount"/>
+        <result property="status" column="status"/>
+        <result property="createdTime" column="created_time"/>
+        <result property="expireTime" column="expire_time"/>
+        <result property="payTime" column="pay_time"/>
+        <result property="paymentId" column="payment_id"/>
+        <result property="version" column="version"/>
+        <result property="createdUser" column="created_user"/>
+        <result property="modifiedUser" column="modified_user"/>
+        <result property="modifiedTime" column="modified_time"/>
+        <collection property="items" ofType="com.wyc21.entity.OrderItem" resultMap="OrderItemMap"/>
+    </resultMap>
+
+    <insert id="insert" parameterType="com.wyc21.entity.Order">
+        INSERT INTO wz_orders (
+            order_id, user_id, total_amount, status,
+            created_time, expire_time, version, created_user
+        ) VALUES (
+            #{orderId}, #{userId}, #{totalAmount}, #{status},
+            #{createdTime}, #{expireTime}, #{version}, #{createdUser}
+        )
+    </insert>
+
+   <select id="findById" resultMap="OrderMap">
+    SELECT * FROM wz_orders WHERE order_id = #{orderId}
+</select>
+
+<select id="findByIdForUpdate" resultMap="OrderMap">
+    SELECT * FROM wz_orders WHERE order_id = #{orderId} FOR UPDATE
+</select>
+
+    <update id="updateStatus">
+        UPDATE wz_orders 
+        SET status = #{newStatus},
+            version = version + 1
+        WHERE order_id = #{orderId} 
+        AND status = #{oldStatus}
+        AND version = #{version}
+    </update>
+
+    <update id="updateOrder">
+    UPDATE wz_orders
+    SET status = #{status},
+        pay_time = #{payTime},
+        payment_id = #{paymentId},
+        version = version + 1
+    WHERE order_id = #{orderId}
+    AND version = #{version}
+</update>
+    <select id="findExpiredOrders" resultMap="OrderMap">
+        SELECT * FROM wz_orders 
+        WHERE status = 'PENDING_PAY'
+        AND expire_time &lt; #{currentTime}
+    </select>
+
+    <insert id="insertOrderItem" parameterType="com.wyc21.entity.OrderItem">
+        INSERT INTO wz_order_items (
+            order_item_id, order_id, product_id, product_name,
+            quantity, price, created_user, created_time
+        ) VALUES (
+            #{orderItemId}, #{orderId}, #{productId}, #{productName},
+            #{quantity}, #{price}, #{createdUser}, NOW()
+        )
+    </insert>
+
+    <select id="findOrderItems" resultMap="OrderItemMap">
+        SELECT * FROM wz_order_items 
+        WHERE order_id = #{orderId}
+    </select>
+</mapper> 

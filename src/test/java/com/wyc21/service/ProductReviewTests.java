@@ -76,7 +76,7 @@ public class ProductReviewTests {
         product.setRating(rating);
         product.setReviewCount(reviewCount);
         product.setImageUrl("http://example.com/images/" + name.toLowerCase().replace(" ", "-") + ".jpg");
-        product.setIsActive(true);
+        product.setIsActive(1);
 
         productMapper.insert(product);
         return product;

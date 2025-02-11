@@ -38,4 +38,19 @@ public interface ProductMapper {
 
         // 更新商品库存
         void updateStock(@Param("productId") Long productId, @Param("stock") Integer stock);
+
+        /**
+         * 扣减库存
+         */
+        int decreaseStock(@Param("productId") Long productId, @Param("quantity") Integer quantity);
+
+        /**
+         * 恢复库存
+         */
+        int increaseStock(@Param("productId") Long productId, @Param("quantity") Integer quantity);
+
+        /**
+         * 锁定商品
+         */
+        Product findByIdForUpdate(Long productId);
 }

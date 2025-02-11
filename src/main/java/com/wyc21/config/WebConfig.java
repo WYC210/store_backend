@@ -17,10 +17,12 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addInterceptor(tokenInterceptor)
                 .addPathPatterns("/**") // 拦截所有请求
                 .excludePathPatterns( // 不拦截的请求
+                        
                         "/users/login", // 登录
                         "/users/reg", // 注册
                         "/products/**", // 商品相关的所有接口
-                        "/categories/**" // 分类相关的所有接口
+                        "/categories" // 分类相关的所有接口
+                        
                 );
     }
 }

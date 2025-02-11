@@ -20,7 +20,7 @@ public class CategoryServiceImpl implements CategoryService {
     public List<Category> getCategoryTree() {
         // 获取所有分类
         List<Category> allCategories = categoryMapper.findAll();
-
+       
         // 构建分类树
         Map<Long, List<Category>> childrenMap = allCategories.stream()
                 .filter(c -> c.getParentCategoryId() != null)

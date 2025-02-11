@@ -236,7 +236,7 @@ INSERT INTO wz_carts (cart_id, user_id, created_time, modified_time, is_checked_
 INSERT INTO wz_cart_items (cart_item_id, cart_id, product_id, quantity, price, product_name, created_time, modified_time) VALUES
 (1, 1, 1, 1, 6999.00, 'iPhone 14', NOW(), NOW()),
 (2, 1, 3, 2, 299.00, '男士休闲夹克', NOW(), NOW()),
-(3, 2, 4, 1, 199.00, '连衣裙', NOW(), NOW());
+(3, 2, 4, 1, 199.00, '连衣裙', NOW(), NOW()); 
 
 -- 初始化浏览器指纹数据
 INSERT INTO wz_browser_fingerprints (fingerprint_id, first_seen_time, last_seen_time, user_id) VALUES

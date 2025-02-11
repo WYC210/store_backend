@@ -73,7 +73,6 @@
         SELECT *
         FROM wz_products
         WHERE product_id = #{productId}
-        AND is_active = 1
     </select>
 
     <select id="findReviewsByProductId" resultType="com.wyc21.entity.ProductReview">
@@ -128,5 +127,26 @@
         FROM wz_products p
         WHERE p.is_active = 1
         ORDER BY p.created_time DESC
+    </select>
+
+    <update id="decreaseStock">
+        UPDATE wz_products 
+        SET stock = stock - #{quantity},
+             modified_time = NOW()
+        WHERE product_id = #{productId}
+        AND stock >= #{quantity}
+    </update>
+
+    <update id="increaseStock">
+        UPDATE wz_products 
+        SET stock = stock + #{quantity},
+             modified_time = NOW()
+        WHERE product_id = #{productId}
+    </update>
+
+    <select id="findByIdForUpdate" resultMap="ProductMap">
+        SELECT * FROM wz_products 
+        WHERE product_id = #{productId} 
+        FOR UPDATE
     </select>
 </mapper> 

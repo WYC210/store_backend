@@ -1,6 +1,7 @@
 package com.wyc21.service.impl;
 
 import java.util.Date;
+import java.time.LocalDateTime;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -60,17 +61,17 @@ public class UserServiceImpl implements IUserService {
         user.setPassword(PasswordUtils.hashPassword(user.getPassword()));
 
         // 补全数据
-        user.setIsDelete(false);
+        user.setIsDelete(0);
         user.setCreatedUser(user.getUsername());
         user.setModifiedUser(user.getUsername());
-        Date date = new Date();
-        user.setCreatedTime(date);
-        user.setModifiedTime(date);
+        LocalDateTime now = LocalDateTime.now();
+        user.setCreatedTime(now);
+        user.setModifiedTime(now);
         user.setPower("user");
         user.setAvatar("default.jpg");
-        user.setGender(0); // 默认性别为未知
-        user.setPhone(""); // 空字符串而不是null
-        user.setEmail(""); // 空字符串而不是null
+        user.setGender(0);
+        user.setPhone("");
+        user.setEmail("");
 
         // 执行注册
         Integer rows = userMapper.insert(user);
@@ -107,7 +108,7 @@ public class UserServiceImpl implements IUserService {
         }
 
         // 判断用户是否被删除
-        if (result.getIsDelete() == true) {
+        if (result == null || result.getIsDelete() == 1) {
             throw new UserNotFoundException("用户不存在");
         }
 
@@ -124,28 +125,26 @@ public class UserServiceImpl implements IUserService {
         // 生成token
         String token = jwtUtil.generateToken(result.getUid(), result.getUsername(), ip, ipLocation);
 
-        // 存储到Redis
+        // 存储到Redis，设置5分钟过期
         String redisKey = "token:" + result.getUid();
         redisUtil.setToken(redisKey, token, 5 * 60 * 1000L);
 
         // 设置HttpOnly Cookie
         cookieUtil.setTokenCookie(response, token);
 
-        // 存储IP信息
+        // 存储IP信息，设置7天过期
         redisUtil.setToken("ip:" + result.getUid(), ip + "|" + ipLocation, 7 * 24 * 60 * 60 * 1000L);
 
-        // 设置token到用户对象（这里只设置了部分字段）
+        // 设置返回的用户对象
         User user = new User();
         user.setUid(result.getUid());
         user.setUsername(result.getUsername());
         user.setAvatar(result.getAvatar());
         user.setToken("Bearer " + token);
-
-        // 需要添加这些字段
-        user.setPhone(result.getPhone()); // 设置手机号
-        user.setEmail(result.getEmail()); // 设置邮箱
-        user.setGender(result.getGender()); // 设置性别
-        user.setPower(result.getPower()); // 设置权限
+        user.setPhone(result.getPhone());
+        user.setEmail(result.getEmail());
+        user.setGender(result.getGender());
+        user.setPower(result.getPower());
 
         return user;
     }
@@ -153,7 +152,7 @@ public class UserServiceImpl implements IUserService {
     @Override
     public User getUserById(Long uid) {
         User result = userMapper.findByUid(uid);
-        if (result == null || result.getIsDelete() == true) {
+        if (result == null || result.getIsDelete() == 1) {
             throw new UserNotFoundException("用户不存在");
         }
 
@@ -176,7 +175,7 @@ public class UserServiceImpl implements IUserService {
     public User updateUserInfo(User user) {
         // 获取原用户信息
         User result = userMapper.findByUid(user.getUid());
-        if (result == null || result.getIsDelete() == true) {
+        if (result == null || result.getIsDelete() == 1) {
             throw new UserNotFoundException("用户不存在");
         }
 
@@ -188,7 +187,7 @@ public class UserServiceImpl implements IUserService {
         updateUser.setGender(user.getGender());
         updateUser.setAvatar(user.getAvatar());
         updateUser.setModifiedUser(result.getUsername());
-        updateUser.setModifiedTime(new Date());
+        updateUser.setModifiedTime(LocalDateTime.now());
 
         // 执行更新
         Integer rows = userMapper.updateInfo(updateUser);
@@ -204,7 +203,7 @@ public class UserServiceImpl implements IUserService {
     public void updatePassword(Long uid, String oldPassword, String newPassword) {
         // 获取用户信息
         User result = userMapper.findByUid(uid);
-        if (result == null || result.getIsDelete() == true) {
+        if (result == null || result.getIsDelete() == 1) {
             throw new UserNotFoundException("用户不存在");
         }
 
@@ -221,7 +220,7 @@ public class UserServiceImpl implements IUserService {
         updateUser.setUid(uid);
         updateUser.setPassword(hashedPassword);
         updateUser.setModifiedUser(result.getUsername());
-        updateUser.setModifiedTime(new Date());
+        updateUser.setModifiedTime(LocalDateTime.now());
 
         // 执行更新
         Integer rows = userMapper.updatePassword(updateUser);

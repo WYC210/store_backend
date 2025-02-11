@@ -35,4 +35,5 @@ public class DatabaseInitConfig implements CommandLineRunner {
             initialized = true;
         }
     }
+  
 }

@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
+
 @Component
 public class TokenInterceptor implements HandlerInterceptor {
 
@@ -30,7 +31,8 @@ public class TokenInterceptor implements HandlerInterceptor {
             throws Exception {
         // 获取请求路径
         String path = request.getRequestURI();
-
+        // 显示完整路径
+        System.out.println("请求路径：" + path);
         // 检查是否是不需要拦截的路径
         if (path.startsWith("/products") ||
                 path.startsWith("/categories") ||

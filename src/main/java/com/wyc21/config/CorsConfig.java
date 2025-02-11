@@ -12,11 +12,11 @@ public class CorsConfig {
     public CorsFilter corsFilter() {
         CorsConfiguration config = new CorsConfiguration();
 
-        // 允许的域名
-        config.addAllowedOrigin("http://localhost:8080");  // 允许本地开发
-        config.addAllowedOrigin("http://192.168.125.251:8080"); // 允许局域网访问
-        config.addAllowedOrigin("http://192.168.125.251"); // 允许不带端口访问
-
+        // // 允许的域名
+        // config.addAllowedOrigin("http://localhost:8080");  // 允许本地开发
+        // config.addAllowedOrigin("http://192.168.125.251:8080"); // 允许局域网访问
+        // config.addAllowedOrigin("http://192.168.125.251"); // 允许不带端口访问
+        config.addAllowedOriginPattern("*");
         // 允许携带认证信息
         config.setAllowCredentials(true);
 
