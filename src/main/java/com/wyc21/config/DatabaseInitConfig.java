@@ -1,39 +1,56 @@
 package com.wyc21.config;
 
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.Resource;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.boot.CommandLineRunner;
 import com.wyc21.service.DatabaseInitService;
 import lombok.Data;
+import java.io.BufferedReader;
+import java.io.FileWriter;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 
 @Configuration
-@ConfigurationProperties(prefix = "app.database")
 @Data
 public class DatabaseInitConfig implements CommandLineRunner {
-    /**
-     * 数据库是否已初始化
-     * 默认为false，表示需要初始化
-     * 初始化完成后会被设置为true
-     */
-    private boolean initialized = true;
-
-    /**
-     * 是否强制初始化
-     * 设置为true时，每次启动都会重新初始化数据库
-     */
-    private boolean forceInit = false;
+    @Value("classpath:db/db_config.txt")
+    private Resource dbConfigFile;
 
     @Autowired
     private DatabaseInitService databaseInitService;
 
+    private boolean isDatabaseInitialized() {
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(dbConfigFile.getInputStream(), StandardCharsets.UTF_8))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (line.startsWith("database_initialized=")) {
+                    return Boolean.parseBoolean(line.split("=")[1].trim());
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false; // 默认返回 false
+    }
+
     @Override
     public void run(String... args) {
-        // 如果未初始化或强制初始化，则执行初始化
-        if (!initialized || forceInit) {
+        if (!isDatabaseInitialized()) {
             databaseInitService.initializeDatabase();
-            initialized = true;
+            // 更新配置文件，标记数据库已初始化
+            updateDatabaseInitializedFlag(true);
         }
     }
 
+    private void updateDatabaseInitializedFlag(boolean initialized) {
+        try (FileWriter writer = new FileWriter(dbConfigFile.getFile())) {
+            writer.write("database_initialized=" + initialized + "\n");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 }
