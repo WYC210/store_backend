@@ -32,6 +32,8 @@ import com.wyc21.service.ex.OrderStatusException;
 import com.wyc21.service.ex.OrderExpiredException;
 import com.wyc21.service.ex.OrderNotFoundException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import java.util.Collections;
+
 
 
 @Service
@@ -55,8 +57,28 @@ public class OrderServiceImpl implements IOrderService {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
-    private static final long ORDER_EXPIRE_MINUTES = 1;
+    //订单过期时间
+    private static final long ORDER_EXPIRE_MINUTES = 30;
+    
+    // 添加新方法：直接购买单个商品
+    @Override
+    @Transactional
+    public Order createOrderDirect(Long userId, Long productId, Integer quantity) {
+        // 创建一个临时的 CartItem 来复用现有逻辑
+        Product product = productMapper.findById(productId);
+        if (product == null) {
+            throw new ProductNotFoundException("商品不存在");
+        }
 
+        CartItem item = new CartItem();
+        item.setProductId(productId);
+        item.setQuantity(quantity);
+        item.setPrice(product.getPrice());
+        item.setProductName(product.getName());
+
+        List<CartItem> items = Collections.singletonList(item);
+        return createOrder(userId, items);
+    }
     @Override
     @Transactional
     public Order createOrder(Long userId, List<CartItem> items) {
@@ -84,26 +106,21 @@ public class OrderServiceImpl implements IOrderService {
 
         // 4. 创建订单
         Order order = new Order();
-        String orderId = generateOrderId(); // 使用自定义的唯一订单号生成方法
+        String orderId = generateOrderId();
         order.setOrderId(orderId);
         order.setUserId(userId);
         order.setTotalAmount(totalAmount);
         order.setStatus(OrderStatus.CREATED);
         order.setCreatedTime(LocalDateTime.now());
-        order.setExpireTime(LocalDateTime.now().plusMinutes(1)); // 30分钟后过期
-        order.setVersion(1);
+        order.setExpireTime(LocalDateTime.now().plusMinutes(30));
+        order.setVersion(1);  // 初始版本号
         order.setCreatedUser("system");
         order.setModifiedTime(LocalDateTime.now());
         order.setModifiedUser("system");
 
-
         // 5. 保存订单
         orderMapper.insert(order);
-       
-        // 确保状态更新到数据库
-        orderMapper.updateOrder(order);
-        log.info("版本号: {}", order.getVersion());
-        log.info("订单状态: {}", order.getStatus());
+
         // 6. 保存订单商品并扣减库存
         for (CartItem item : items) {
             // 创建订单项
@@ -122,23 +139,22 @@ public class OrderServiceImpl implements IOrderService {
             // 扣减库存
             productMapper.decreaseStock(item.getProductId(), item.getQuantity());
         }
-        // 在扣减库存后，将状态更新为 PENDING_PAY111·
+
+        // 7. 更新订单状态为待支付
         order.setStatus(OrderStatus.PENDING_PAY);
-        order.setVersion(order.getVersion() + 1); // 更新版本号
-        log.info("版本号: {}", order.getVersion());
-        log.info("订单状态: {}", order.getStatus());
-        // 确保状态更新到数据库
+        // 不要手动修改版本号，由数据库管理
         orderMapper.updateOrder(order);
 
-        // 7. 设置订单过期
+        // 8. 设置Redis过期时间
         String orderKey = "order:" + order.getOrderId();
-        redisTemplate.opsForValue().set(orderKey, order.getStatus().name(), ORDER_EXPIRE_MINUTES, TimeUnit.SECONDS);
+        redisTemplate.opsForValue().set(orderKey, order.getStatus().name(), 
+            ORDER_EXPIRE_MINUTES, TimeUnit.MINUTES);
 
         return order;
     }
 
     @Override
-    @Transactional // 使用默认的REQUIRED事务传播机制
+    @Transactional
     public boolean payOrder(String orderId, String paymentId) {
         // 从 Redis 获取订单状态
         String orderKey = "order:" + orderId;
@@ -161,7 +177,7 @@ public class OrderServiceImpl implements IOrderService {
             if (order.getExpireTime().isBefore(LocalDateTime.now())) {
                 // 更新订单状态为过期
                 order.setStatus(OrderStatus.EXPIRED);
-                order.setVersion(order.getVersion() + 1);
+                // order.setVersion(order.getVersion() + 1);
                 order.setModifiedTime(LocalDateTime.now());
                 order.setModifiedUser("system");
 
@@ -186,19 +202,21 @@ public class OrderServiceImpl implements IOrderService {
             }
         }
 
-        // 继续支付逻辑
+        // 更新订单状态
         order.setStatus(OrderStatus.PAID);
         order.setPaymentId(paymentId);
         order.setPayTime(LocalDateTime.now());
-        order.setVersion(order.getVersion() + 1);
         order.setModifiedTime(LocalDateTime.now());
         order.setModifiedUser("system");
+        // 不要手动修改版本号
 
-        // 更新订单
-        orderMapper.updateOrder(order);
-        redisTemplate.opsForValue().set(orderKey, order.getStatus().name(), ORDER_EXPIRE_MINUTES, TimeUnit.SECONDS);
-        log.info("订单状态修改为: {}", order.getStatus().name());
-        return true;
+        int updated = orderMapper.updateOrder(order);
+        if (updated > 0) {
+            orderKey = "order:" + orderId;
+            redisTemplate.opsForValue().set(orderKey, OrderStatus.PAID.name());
+            return true;
+        }
+        return false;
     }
     
 
@@ -321,5 +339,22 @@ public class OrderServiceImpl implements IOrderService {
             log.warn("数据库未初始化或表不存在: {}", e.getMessage());
             return false; // 如果查询失败，返回 false
         }
+    }
+
+    @Override
+    public List<Order> getOrdersByUserId(Long userId) {
+        // 获取用户的所有订单
+        List<Order> orders = orderMapper.findByUserId(userId);
+        
+        // 为每个订单加载订单项
+        for (Order order : orders) {
+            List<OrderItem> items = orderMapper.findOrderItems(order.getOrderId());
+            order.setItems(items);
+        }
+        
+        // 按创建时间降序排序（最新的订单在前）
+        orders.sort((o1, o2) -> o2.getCreatedTime().compareTo(o1.getCreatedTime()));
+        
+        return orders;
     }
 }

@@ -11,6 +11,21 @@ public interface IOrderService {
     Order createOrder(Long userId, List<CartItem> items);
 
     /**
+     * 新增方法：直接购买
+     */
+    Order createOrderDirect(Long userId, Long productId, Integer quantity);
+
+    /**
+     * 获取用户的所有订单
+     */
+    List<Order> getOrdersByUserId(Long userId);
+
+    /**
+     * 获取订单详情
+     */
+    Order getOrder(String orderId);
+
+    /**
      * 支付订单
      */
     boolean payOrder(String orderId, String paymentId);
@@ -21,12 +36,7 @@ public interface IOrderService {
     void cancelOrder(String orderId);
 
     /**
-     * 获取订单信息
-     */
-    Order getOrder(String orderId);
-
-    /**
      * 检查并处理过期订单
      */
     void checkExpiredOrders();
-} 
+}

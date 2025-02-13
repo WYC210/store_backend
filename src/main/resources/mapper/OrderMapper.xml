@@ -43,13 +43,17 @@
     </insert>
 
    <select id="findById" resultMap="OrderMap">
-    SELECT * FROM wz_orders WHERE order_id = #{orderId}
-</select>
+        SELECT * FROM wz_orders WHERE order_id = #{orderId}
+    </select>
 
-<select id="findByIdForUpdate" resultMap="OrderMap">
-    SELECT * FROM wz_orders WHERE order_id = #{orderId} FOR UPDATE
-</select>
-
+    <select id="findByIdForUpdate" resultMap="OrderMap">
+        SELECT * FROM wz_orders WHERE order_id = #{orderId} FOR UPDATE
+    </select>
+    <select id="findByUserId" resultMap="OrderMap">
+        SELECT * FROM wz_orders 
+        WHERE user_id = #{userId}
+        ORDER BY created_time DESC
+    </select>
     <update id="updateStatus">
         UPDATE wz_orders 
         SET status = #{newStatus},
@@ -60,14 +64,30 @@
     </update>
 
     <update id="updateOrder">
-    UPDATE wz_orders
-    SET status = #{status},
-        pay_time = #{payTime},
-        payment_id = #{paymentId},
-        version = version + 1
-    WHERE order_id = #{orderId}
-    AND version = #{version}
-</update>
+        UPDATE wz_orders
+        SET status = #{status},
+            pay_time = #{payTime},
+            payment_id = #{paymentId},
+            modified_time = #{modifiedTime},
+            modified_user = #{modifiedUser},
+            version = version + 1
+        WHERE order_id = #{orderId}
+        AND version = #{version}
+    </update>
+
+    <update id="updateOrderStatus">
+        UPDATE wz_orders 
+        SET status = #{status},
+            pay_time = #{payTime},
+            payment_id = #{paymentId},
+            modified_time = #{modifiedTime},
+            modified_user = #{modifiedUser},
+            version = version + 1
+        WHERE order_id = #{orderId} 
+        AND version = #{version}
+        AND status = #{oldStatus}
+    </update>
+
     <select id="findExpiredOrders" resultMap="OrderMap">
         SELECT * FROM wz_orders 
         WHERE status = 'PENDING_PAY'

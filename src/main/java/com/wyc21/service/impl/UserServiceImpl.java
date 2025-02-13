@@ -108,7 +108,7 @@ public class UserServiceImpl implements IUserService {
         }
 
         // 判断用户是否被删除
-        if (result == null || result.getIsDelete() == 1) {
+        if (result.getIsDelete() == 1) {
             throw new UserNotFoundException("用户不存在");
         }
 
@@ -123,7 +123,7 @@ public class UserServiceImpl implements IUserService {
         String ipLocation = ipUtil.getIpLocation(ip);
 
         // 生成token
-        String token = jwtUtil.generateToken(result.getUid(), result.getUsername(), ip, ipLocation);
+        String token = jwtUtil.generateAccessToken(result.getUid(), result.getUsername(), ip, ipLocation);
 
         // 存储到Redis，设置5分钟过期
         String redisKey = "token:" + result.getUid();

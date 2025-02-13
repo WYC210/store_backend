@@ -16,13 +16,13 @@ public class DatabaseInitConfig implements CommandLineRunner {
      * 默认为false，表示需要初始化
      * 初始化完成后会被设置为true
      */
-    private boolean initialized = false;
+    private boolean initialized = true;
 
     /**
      * 是否强制初始化
      * 设置为true时，每次启动都会重新初始化数据库
      */
-    private boolean forceInit = true;
+    private boolean forceInit = false;
 
     @Autowired
     private DatabaseInitService databaseInitService;
@@ -35,5 +35,5 @@ public class DatabaseInitConfig implements CommandLineRunner {
             initialized = true;
         }
     }
-  
+
 }
