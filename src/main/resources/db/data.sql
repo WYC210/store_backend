@@ -48,19 +48,19 @@ INSERT INTO wz_categories (category_id, name, parent_id, level, sort_order, is_a
 
 -- 4. 初始化商品数据（字段顺序已修正）
 INSERT INTO wz_products (product_id, category_id, name, description, price, stock, brand, tags, rating, review_count, image_url, is_active, created_user, created_time, modified_user, modified_time) VALUES
-(1, 11, 'iPhone 14', '苹果最新旗舰手机', 6999.00, 100, 'Apple', '手机,苹果,5G', 4.8, 120, '/images/products/iphone14.jpg', 1, 'system', NOW(), 'system', NOW()),
-(2, 12, 'MacBook Pro', '专业级笔记本电脑', 12999.00, 50, 'Apple', '笔记本,苹果,电脑', 4.9, 80, '/images/products/macbook.jpg', 1, 'system', NOW(), 'system', NOW()),
-(3, 21, '男士休闲夹克', '舒适百搭的夹克外套', 299.00, 200, 'Brand A', '外套,夹克,男装', 4.5, 50, '/images/products/jacket.jpg', 1, 'system', NOW(), 'system', NOW()),
-(4, 22, '连衣裙', '优雅时尚连衣裙', 199.00, 150, 'Brand B', '裙子,女装,春装', 4.7, 65, '/images/products/dress.jpg', 1, 'system', NOW(), 'system', NOW()),
-(5, 31, '三体全集', '刘慈欣科幻小说', 99.00, 300, '重庆出版社', '科幻,小说,畅销书', 4.9, 200, '/images/products/santi.jpg', 1, 'system', NOW(), 'system', NOW());
+(1, 11, 'iPhone 14', '苹果最新旗舰手机', 6999.00, 100, 'Apple', '手机,苹果,5G', 4.8, 120, '/images/iphone14.jpeg', 1, 'system', NOW(), 'system', NOW()),
+(2, 12, 'MacBook Pro', '专业级笔记本电脑', 12999.00, 50, 'Apple', '笔记本,苹果,电脑', 4.9, 80, '/images/macbookpro.jpeg', 1, 'system', NOW(), 'system', NOW()),
+(3, 21, '男士休闲夹克', '舒适百搭的夹克外套', 299.00, 200, 'Brand A', '外套,夹克,男装', 4.5, 50, '/images/jacket.jpeg', 1, 'system', NOW(), 'system', NOW()),
+(4, 22, '连衣裙', '优雅时尚连衣裙', 199.00, 150, 'Brand B', '裙子,女装,春装', 4.7, 65, '/images/dress.png', 1, 'system', NOW(), 'system', NOW()),
+(5, 31, '三体全集', '刘慈欣科幻小说', 99.00, 300, '重庆出版社', '科幻,小说,畅销书', 4.9, 200, '/images/santi.jpeg', 1, 'system', NOW(), 'system', NOW());
 
 -- 5. 初始化商品图片数据
 INSERT INTO wz_product_images (image_id, product_id, image_url, is_primary) VALUES
-(1, 1, '/images/products/iphone14_1.jpg', 1),
-(2, 1, '/images/products/iphone14_2.jpg', 0),
-(3, 2, '/images/products/macbook_1.jpg', 1),
-(4, 3, '/images/products/jacket_1.jpg', 1),
-(5, 4, '/images/products/dress_1.jpg', 1);
+(1, 1, '/images/iphone14.jpeg', 1),
+(2, 1, '/images/iphone14.jpeg', 0),
+(3, 2, '/images/macbookpro.jpeg', 1),
+(4, 3, '/images/jacket.jpeg', 1),
+(5, 4, '/images/dress.png', 1);
 
 -- 6. 初始化浏览器指纹数据
 INSERT INTO wz_browser_fingerprints (fingerprint_id, first_seen_time, last_seen_time, user_id) VALUES

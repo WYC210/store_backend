@@ -33,6 +33,23 @@
         </collection>
     </resultMap>
 
+    <resultMap id="ProductDetailMap" type="com.wyc21.entity.Product">
+        <id property="productId" column="product_id"/>
+        <result property="name" column="name"/>
+        <result property="description" column="description"/>
+        <result property="price" column="price"/>
+        <result property="stock" column="stock"/>
+        <result property="categoryId" column="category_id"/>
+        <result property="brand" column="brand"/>
+        <result property="tags" column="tags"/>
+        <result property="imageUrl" column="image_url"/>
+        <result property="rating" column="rating"/>
+        <result property="reviewCount" column="review_count"/>
+        <result property="isActive" column="is_active"/>
+        <result property="createdTime" column="created_time"/>
+        <result property="modifiedTime" column="modified_time"/>
+    </resultMap>
+
     <select id="findProducts" resultType="com.wyc21.entity.Product">
         SELECT p.*
         FROM wz_products p
@@ -46,7 +63,7 @@
                 OR p.description LIKE CONCAT('%', #{keyword}, '%')
                 OR p.brand LIKE CONCAT('%', #{keyword}, '%')
                 OR p.tags LIKE CONCAT('%', #{keyword}, '%')
-            )
+                OR p.image_url LIKE CONCAT('%', #{imageUrl}, '%')
         </if>
         ORDER BY p.created_time DESC
         LIMIT #{offset}, #{limit}
@@ -65,14 +82,15 @@
                 OR p.description LIKE CONCAT('%', #{keyword}, '%')
                 OR p.brand LIKE CONCAT('%', #{keyword}, '%')
                 OR p.tags LIKE CONCAT('%', #{keyword}, '%')
-            )
+                OR p.image_url LIKE CONCAT('%', #{imageUrl}, '%')
         </if>
     </select>
 
-    <select id="findById" resultType="com.wyc21.entity.Product">
-        SELECT *
-        FROM wz_products
-        WHERE product_id = #{productId}
+    <select id="findById" resultMap="ProductDetailMap">
+        SELECT p.*, pi.image_url
+        FROM wz_products p
+        LEFT JOIN wz_product_images pi ON p.product_id = pi.product_id AND pi.is_primary = 1
+        WHERE p.product_id = #{productId}
     </select>
 
     <select id="findReviewsByProductId" resultType="com.wyc21.entity.ProductReview">
@@ -148,5 +166,12 @@
         SELECT * FROM wz_products 
         WHERE product_id = #{productId} 
         FOR UPDATE
+    </select>
+
+    <select id="findProductImages" resultType="string">
+        SELECT image_url
+        FROM wz_product_images
+        WHERE product_id = #{productId}
+        ORDER BY is_primary DESC
     </select>
 </mapper> 

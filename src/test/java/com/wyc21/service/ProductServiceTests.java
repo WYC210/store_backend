@@ -42,7 +42,7 @@ public class ProductServiceTests {
     public void testGetProductsWithoutFilters() {
         log.info("测试：获取商品列表 - 无筛选条件");
 
-        PageResult<Product> result = productService.getProducts(null, null, 1, 10);
+        PageResult<Product> result = productService.getProducts(null, null, 1, 10,null);
 
         // 基本验证
         assertNotNull(result, "返回结果不应为空");
@@ -70,7 +70,7 @@ public class ProductServiceTests {
         log.info("测试：获取商品列表 - 按分类筛选");
 
         Long categoryId = 1L; // 电子产品分类
-        PageResult<Product> result = productService.getProducts(categoryId, null, 1, 10);
+        PageResult<Product> result = productService.getProducts(categoryId, null, 1, 10,null);
 
         assertNotNull(result, "返回结果不应为空");
         assertFalse(result.getList().isEmpty(), "商品列表不应为空");
@@ -87,7 +87,7 @@ public class ProductServiceTests {
         log.info("测试：获取商品列表 - 关键词搜索");
 
         String keyword = "iPhone";
-        PageResult<Product> result = productService.getProducts(null, keyword, 1, 10);
+        PageResult<Product> result = productService.getProducts(null, keyword, 1, 10,null);
 
         assertNotNull(result, "返回结果不应为空");
         assertFalse(result.getList().isEmpty(), "搜索结果不应为空");
@@ -111,15 +111,15 @@ public class ProductServiceTests {
         log.info("测试：获取商品列表 - 无效的分页参数");
 
         // 测试页码为0
-        PageResult<Product> result1 = productService.getProducts(null, null, 0, 10);
+        PageResult<Product> result1 = productService.getProducts(null, null, 0, 10,null);
         assertEquals(1, result1.getPageNum(), "无效页码应被修正为1");
 
         // 测试页大小为0
-        PageResult<Product> result2 = productService.getProducts(null, null, 1, 0);
+        PageResult<Product> result2 = productService.getProducts(null, null, 1, 0,null);
         assertTrue(result2.getPageSize() > 0, "无效页大小应被修正为正数");
 
         // 测试超大页码
-        PageResult<Product> result3 = productService.getProducts(null, null, 999, 10);
+        PageResult<Product> result3 = productService.getProducts(null, null, 999, 10,null);
         assertTrue(result3.getList().isEmpty(), "超出范围的页码应返回空列表");
     }
 }

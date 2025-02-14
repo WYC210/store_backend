@@ -86,7 +86,7 @@ public class ProductReviewTests {
     public void testGetProductsWithReviews() {
         log.info("开始测试获取带评论的商品列表");
 
-        PageResult<Product> result = productService.getProducts(null, null, 1, 5);
+        PageResult<Product> result = productService.getProducts(null, null, 1, 5,null);
 
         assertNotNull(result, "返回结果不应为空");
         assertNotNull(result.getList(), "商品列表不应为空");
@@ -120,7 +120,7 @@ public class ProductReviewTests {
         log.info("开始测试获取单个商品的评论信息");
 
         // 使用findProducts替代findAll
-        List<Product> products = productMapper.findProducts(null, null, 0, 1);
+        List<Product> products = productMapper.findProducts(null, null, 0, 1,null);
         assertFalse(products.isEmpty(), "应该能找到测试商品");
         Long productId = products.get(0).getProductId();
 
@@ -153,7 +153,7 @@ public class ProductReviewTests {
         log.info("开始测试评论排序");
 
         // 使用findProducts替代findAll
-        List<Product> products = productMapper.findProducts(null, null, 0, 1);
+        List<Product> products = productMapper.findProducts(null, null, 0, 1,null);
         assertFalse(products.isEmpty(), "应该能找到测试商品");
         Long productId = products.get(0).getProductId();
 

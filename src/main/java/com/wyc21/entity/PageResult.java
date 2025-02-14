@@ -10,6 +10,7 @@ public class PageResult<T> {
     private int pageNum; // 当前页码
     private int pageSize; // 每页大小
     private int pages; // 总页数
+    
 
     public PageResult(List<T> list, long total, int pageNum, int pageSize) {
         this.list = list;

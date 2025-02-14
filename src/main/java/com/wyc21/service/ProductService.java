@@ -7,7 +7,7 @@ import java.util.List;
 
 public interface ProductService {
     // 分页获取商品列表
-    PageResult<Product> getProducts(Long categoryId, String keyword, int pageNum, int pageSize);
+    PageResult<Product> getProducts(Long categoryId, String keyword, int pageNum, int pageSize,String imageUrl);
     
     // 获取商品详情
     Product getProduct(Long productId);

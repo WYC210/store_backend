@@ -18,7 +18,7 @@ public class ProductServiceImpl implements ProductService {
     private ProductMapper productMapper;
     
     @Override
-    public PageResult<Product> getProducts(Long categoryId, String keyword, int pageNum, int pageSize) {
+    public PageResult<Product> getProducts(Long categoryId, String keyword, int pageNum, int pageSize,String imageUrl) {
         // 验证并修正分页参数
         pageNum = Math.max(1, pageNum);  // 页码最小为1
         pageSize = Math.max(1, pageSize);  // 每页大小最小为1
@@ -27,8 +27,8 @@ public class ProductServiceImpl implements ProductService {
         int offset = (pageNum - 1) * pageSize;
         
         // 查询数据
-        List<Product> products = productMapper.findProducts(categoryId, keyword, offset, pageSize);
-        long total = productMapper.countProducts(categoryId, keyword);
+        List<Product> products = productMapper.findProducts(categoryId, keyword, offset, pageSize,imageUrl);
+        long total = productMapper.countProducts(categoryId, keyword,imageUrl);
         
         // 返回分页结果
         return new PageResult<>(products, total, pageNum, pageSize);

@@ -21,7 +21,8 @@ public class WebConfig implements WebMvcConfigurer {
                         "/users/login", // 登录
                         "/users/reg", // 注册
                         "/products/**", // 商品相关的所有接口
-                        "/categories" // 分类相关的所有接口
+                        "/categories",// 分类相关的所有接口
+                        "/products/images/**" // 图片相关的所有接口
 
                 );
     }

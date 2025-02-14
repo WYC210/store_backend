@@ -14,14 +14,16 @@ public interface ProductMapper {
         List<Product> findProducts(@Param("categoryId") Long categoryId,
                         @Param("keyword") String keyword,
                         @Param("offset") int offset,
-                        @Param("limit") int limit);
+                        @Param("limit") int limit,
+                        @Param("imageUrl") String imageUrl);
 
         // 获取所有商品（按创建时间倒序）
         List<Product> findAll();
 
         // 获取商品总数
         long countProducts(@Param("categoryId") Long categoryId,
-                        @Param("keyword") String keyword);
+                        @Param("keyword") String keyword,
+                        @Param("imageUrl") String imageUrl);
 
         // 获取商品详情（包括图片）
         Product findById(Long productId);
@@ -53,4 +55,12 @@ public interface ProductMapper {
          * 锁定商品
          */
         Product findByIdForUpdate(Long productId);
+
+        /**
+         * 获取商品的所有图片URL
+         * 
+         * @param productId 商品ID
+         * @return 图片URL列表
+         */
+        List<String> findProductImages(@Param("productId") Long productId);
 }
