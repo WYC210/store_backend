@@ -240,7 +240,7 @@ public class OrderServiceImpl implements IOrderService {
 
                 // 更新订单状态为过期
                 order.setStatus(OrderStatus.EXPIRED);
-                order.setVersion(order.getVersion() + 1);
+              
                 order.setModifiedTime(LocalDateTime.now());
                 order.setModifiedUser("system");
 

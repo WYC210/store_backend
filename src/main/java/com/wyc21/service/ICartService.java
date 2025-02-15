@@ -3,6 +3,8 @@ package com.wyc21.service;
 import com.wyc21.entity.CartItem;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
+import com.wyc21.util.JsonResult;
 
 public interface ICartService {
     /**
@@ -39,4 +41,9 @@ public interface ICartService {
      * 获取购物车总金额
      */
     BigDecimal getCartTotal(Long userId);
+    /**
+     * 购买商品
+     */
+     JsonResult<Map<String, Object>> purchaseProduct(Long userId, Long productId, Integer quantity);
+
 } 

@@ -23,6 +23,7 @@ public class WebConfig implements WebMvcConfigurer {
                         "/products/**", // 商品相关的所有接口
                         "/categories",// 分类相关的所有接口
                         "/products/images/**" // 图片相关的所有接口
+                      
 
                 );
     }

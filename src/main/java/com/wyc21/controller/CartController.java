@@ -8,6 +8,9 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.math.BigDecimal;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.ArrayList;
 
 @RestController
 @RequestMapping("/cart")
@@ -27,6 +30,12 @@ public class CartController extends BaseController {
     public JsonResult<List<CartItem>> getCartItems(HttpServletRequest request) {
         Long userId = (Long) request.getAttribute("uid");
         List<CartItem> items = cartService.getCartItems(userId);
+
+        // 即使购物车为空，也返回一个空列表和成功状态
+        if (items == null || items.isEmpty()) {
+            return new JsonResult<>(OK, new ArrayList<>(), "购物车为空");
+        }
+
         return new JsonResult<>(OK, items);
     }
 
@@ -61,5 +70,11 @@ public class CartController extends BaseController {
         Long userId = (Long) request.getAttribute("uid");
         BigDecimal total = cartService.getCartTotal(userId);
         return new JsonResult<>(OK, total);
+    }
+
+    @PostMapping("/purchase")
+    public JsonResult<Map<String, Object>> purchaseProduct(@RequestBody CartItem cartItem, HttpServletRequest request) {
+        Long userId = (Long) request.getAttribute("uid");
+        return cartService.purchaseProduct(userId, cartItem.getProductId(), cartItem.getQuantity());
     }
 }

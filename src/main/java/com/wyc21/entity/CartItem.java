@@ -15,4 +15,5 @@ public class CartItem {
     private String createdUser;
     private Date createdTime;
     private Date modifiedTime;
+    private String imageUrl; 
 }

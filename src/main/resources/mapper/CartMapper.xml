@@ -67,11 +67,22 @@
         DELETE FROM wz_cart_items WHERE cart_id = #{cartId}
     </delete>
     
-    <select id="findCartItems" resultMap="CartItemMap">
-        SELECT ci.* 
-        FROM wz_cart_items ci
-        JOIN wz_carts c ON ci.cart_id = c.cart_id
-        WHERE c.user_id = #{userId}
-        ORDER BY ci.created_time DESC
+    <select id="findCartItems" resultType="com.wyc21.entity.CartItem">
+        SELECT 
+            ci.cart_item_id AS cartItemId,
+            ci.cart_id AS cartId,
+            ci.product_id AS productId,
+            ci.quantity AS quantity,
+            ci.price AS price,
+            p.name AS productName,
+            CONCAT('products', p.image_url) AS imageUrl
+        FROM 
+            wz_cart_items ci
+        JOIN 
+            wz_carts c ON ci.cart_id = c.cart_id
+        JOIN 
+            wz_products p ON ci.product_id = p.product_id
+        WHERE 
+            c.user_id = #{userId}
     </select>
 </mapper> 
