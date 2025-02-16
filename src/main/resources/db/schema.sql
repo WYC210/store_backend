@@ -95,29 +95,28 @@ CREATE TABLE IF NOT EXISTS wz_browse_history (
 
 -- 创建购物车表
 CREATE TABLE IF NOT EXISTS wz_carts (
-    cart_id BIGINT PRIMARY KEY,                 -- 购物车ID
-    user_id BIGINT,                             -- 用户ID，外键关联
-    created_user VARCHAR(50) NOT NULL DEFAULT 'system',  -- 创建者
-    created_time DATETIME DEFAULT CURRENT_TIMESTAMP,  -- 创建时间
-    modified_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,  -- 修改时间
-    is_checked_out TINYINT DEFAULT 0,           -- 0表示未结算，1表示已结算
-    FOREIGN KEY (user_id) REFERENCES wz_users(uid) ON DELETE CASCADE
+    cart_id VARCHAR(64) PRIMARY KEY,
+    user_id BIGINT,                    -- 改回 BIGINT，因为 user 表的 uid 是 BIGINT
+    created_user VARCHAR(20),
+    created_time DATETIME,
+    modified_time DATETIME,
+    is_checked_out TINYINT(1) NOT NULL DEFAULT 0,
+    FOREIGN KEY (user_id) REFERENCES wz_users(uid)
 );
 
 -- 创建购物车项表
 CREATE TABLE IF NOT EXISTS wz_cart_items (
-    cart_item_id BIGINT PRIMARY KEY,            -- 购物车项ID
-    cart_id BIGINT,                             -- 购物车ID，外键关联
-    product_id BIGINT,                          -- 商品ID，外键关联
-    quantity INT NOT NULL DEFAULT 1,            -- 商品数量
-    price DECIMAL(10, 2) NOT NULL,              -- 商品价格
-    product_name VARCHAR(255),                  -- 商品名称
-    created_user VARCHAR(50) NOT NULL DEFAULT 'system',  -- 创建者
-    created_time DATETIME DEFAULT CURRENT_TIMESTAMP,  -- 创建时间
-    modified_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,  -- 修改时间
-    FOREIGN KEY (cart_id) REFERENCES wz_carts(cart_id) ON DELETE CASCADE,
-    FOREIGN KEY (product_id) REFERENCES wz_products(product_id) ON DELETE CASCADE,
-    UNIQUE (cart_id, product_id)                -- 确保同一商品在购物车中唯一
+    cart_item_id VARCHAR(64) PRIMARY KEY,
+    cart_id VARCHAR(64),
+    product_id BIGINT,                 -- 改回 BIGINT，因为 product 表的 id 是 BIGINT
+    quantity INT,
+    price DECIMAL(10,2),
+    product_name VARCHAR(100),
+    created_user VARCHAR(20),
+    created_time DATETIME,
+    modified_time DATETIME,
+    FOREIGN KEY (cart_id) REFERENCES wz_carts(cart_id),
+    FOREIGN KEY (product_id) REFERENCES wz_products(product_id)
 );
 
 -- 创建订单表
@@ -127,13 +126,14 @@ CREATE TABLE IF NOT EXISTS wz_orders (
     total_amount DECIMAL(10,2) NOT NULL,
     status VARCHAR(20) NOT NULL,
     created_time DATETIME NOT NULL,
-    expire_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,  -- 添加默认值
+    expire_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     pay_time DATETIME,
     payment_id VARCHAR(32),
     version INT NOT NULL DEFAULT 1,
     created_user VARCHAR(20),
     modified_user VARCHAR(20),
     modified_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    is_delete TINYINT(1) NOT NULL DEFAULT 0,
     FOREIGN KEY (user_id) REFERENCES wz_users(uid) ON DELETE CASCADE
 );
 
@@ -187,3 +187,81 @@ CREATE TABLE IF NOT EXISTS wz_chat_messages_archive (
     created_time DATETIME DEFAULT CURRENT_TIMESTAMP,  -- 创建时间
     archived_time DATETIME DEFAULT CURRENT_TIMESTAMP  -- 归档时间
 );
+
+-- 创建用户归档表
+CREATE TABLE IF NOT EXISTS wz_users_archive (
+    uid BIGINT PRIMARY KEY,
+    username VARCHAR(20) NOT NULL,
+    power VARCHAR(20) NOT NULL,
+    phone VARCHAR(20),
+    email VARCHAR(50),
+    gender INT,
+    avatar VARCHAR(255),
+    is_delete TINYINT(1) NOT NULL,
+    created_user VARCHAR(20),
+    created_time DATETIME,
+    modified_user VARCHAR(20),
+    modified_time DATETIME,
+    archived_time DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 创建商品归档表
+CREATE TABLE IF NOT EXISTS wz_products_archive (
+    product_id BIGINT PRIMARY KEY,
+    category_id BIGINT,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    price DECIMAL(10,2) NOT NULL,
+    stock INT NOT NULL,
+    brand VARCHAR(50),
+    tags VARCHAR(255),
+    rating DECIMAL(3,2),
+    review_count INT,
+    image_url VARCHAR(255),
+    is_active TINYINT(1) NOT NULL,
+    created_user VARCHAR(20),
+    created_time DATETIME,
+    modified_user VARCHAR(20),
+    modified_time DATETIME,
+    archived_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (category_id) REFERENCES wz_categories(category_id)
+);
+
+-- 创建订单归档表
+CREATE TABLE IF NOT EXISTS wz_orders_archive (
+    order_id VARCHAR(32) PRIMARY KEY,
+    user_id BIGINT,
+    total_amount DECIMAL(10,2) NOT NULL,
+    status VARCHAR(20) NOT NULL,
+    created_time DATETIME,
+    expire_time DATETIME,
+    pay_time DATETIME,
+    payment_id VARCHAR(32),
+    version INT,
+    is_delete TINYINT(1) NOT NULL,
+    created_user VARCHAR(20),
+    modified_user VARCHAR(20),
+    modified_time DATETIME,
+    archived_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES wz_users(uid)
+);
+
+-- 创建订单项归档表
+CREATE TABLE IF NOT EXISTS wz_order_items_archive (
+    order_item_id BIGINT PRIMARY KEY,
+    order_id VARCHAR(32) NOT NULL,
+    product_id BIGINT NOT NULL,
+    product_name VARCHAR(100) NOT NULL,
+    quantity INT NOT NULL,
+    price DECIMAL(10,2) NOT NULL,
+    created_user VARCHAR(20),
+    created_time DATETIME,
+    modified_user VARCHAR(20),
+    modified_time DATETIME,
+    archived_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (order_id) REFERENCES wz_orders_archive(order_id),
+    FOREIGN KEY (product_id) REFERENCES wz_products_archive(product_id)
+);
+
+-- 如果需要为已存在的表添加字段，使用单独的语句
+-- ALTER TABLE wz_orders ADD COLUMN IF NOT EXISTS is_delete TINYINT(1) NOT NULL DEFAULT 0;

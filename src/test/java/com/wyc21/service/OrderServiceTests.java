@@ -62,8 +62,8 @@ public class OrderServiceTests {
         List<CartItem> items = new ArrayList<>();
 
         // 添加商品到购物车
-        CartItem item1 = cartService.addToCart(userId, 1L, 1); // iPhone 14
-        CartItem item2 = cartService.addToCart(userId, 2L, 2); // MacBook Pro
+        CartItem item1 = cartService.addToCart(userId, String.valueOf(1L), 1); // iPhone 14
+        CartItem item2 = cartService.addToCart(userId, String.valueOf(2L), 2); // MacBook Pro
         items.add(item1);
         items.add(item2);
 
@@ -81,7 +81,7 @@ public class OrderServiceTests {
         // 创建订单
         Long userId = 2L;
         List<CartItem> items = new ArrayList<>();
-        CartItem item = cartService.addToCart(userId, 1L, 1);
+        CartItem item = cartService.addToCart(userId, String.valueOf(1L), 1);
         items.add(item);
 
         // 确保订单创建成功
@@ -111,7 +111,7 @@ public class OrderServiceTests {
         // 1. 创建订单
         Long userId = 2L;
         List<CartItem> items = new ArrayList<>();
-        CartItem item = cartService.addToCart(userId, 1L, 1);
+        CartItem item = cartService.addToCart(userId, String.valueOf(1L), 1);
         items.add(item);
 
         Order order = orderService.createOrder(userId, items);
@@ -158,7 +158,7 @@ public class OrderServiceTests {
         // 创建订单
         Long userId = 2L;
         List<CartItem> items = new ArrayList<>();
-        CartItem item = cartService.addToCart(userId, 1L, 1);
+        CartItem item = cartService.addToCart(userId, String.valueOf(1L), 1);
         items.add(item);
         Order order = orderService.createOrder(userId, items);
 
@@ -179,7 +179,7 @@ public class OrderServiceTests {
         // 创建订单
         Long userId = 2L;
         List<CartItem> items = new ArrayList<>();
-        CartItem item = cartService.addToCart(userId, 1L, 1);
+        CartItem item = cartService.addToCart(userId, String.valueOf(1L), 1);
         items.add(item);
         Order order = orderService.createOrder(userId, items);
 
@@ -224,7 +224,7 @@ public class OrderServiceTests {
         List<CartItem> items = new ArrayList<>();
 
         // 添加超出库存数量的商品
-        CartItem item = cartService.addToCart(userId, 1L, 999999);
+        CartItem item = cartService.addToCart(userId, String.valueOf(1L), 999999);
         items.add(item);
 
         // 验证是否抛出异常
@@ -257,7 +257,7 @@ public class OrderServiceTests {
         // 创建订单
         Long userId = 2L;
         List<CartItem> items = new ArrayList<>();
-        CartItem item = cartService.addToCart(userId, 1L, 1);
+        CartItem item = cartService.addToCart(userId, String.valueOf(1L), 1);
         items.add(item);
 
         Order order = orderService.createOrder(userId, items);
@@ -299,7 +299,7 @@ public class OrderServiceTests {
         // 创建订单
         Long userId = 2L;
         List<CartItem> items = new ArrayList<>();
-        CartItem item = cartService.addToCart(userId, productId, 2);
+        CartItem item = cartService.addToCart(userId, String.valueOf(productId), 2);
         items.add(item);
         Order order = orderService.createOrder(userId, items);
 

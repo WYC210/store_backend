@@ -11,6 +11,10 @@ import java.math.BigDecimal;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.ArrayList;
+import com.wyc21.service.ex.CartNotFoundException;
+import com.wyc21.service.ex.ProductNotFoundException;
+import com.wyc21.service.ex.UserNotFoundException;
+import com.wyc21.service.ex.InsuffientStockException;
 
 @RestController
 @RequestMapping("/cart")
@@ -45,13 +49,13 @@ public class CartController extends BaseController {
             @RequestParam Integer quantity,
             HttpServletRequest request) {
         Long userId = (Long) request.getAttribute("uid");
-        CartItem updated = cartService.updateQuantity(userId, cartItemId, quantity);
+        CartItem updated = cartService.updateQuantity(userId, String.valueOf(cartItemId), quantity);
         return new JsonResult<>(OK, updated, "更新成功");
     }
 
     @DeleteMapping("/{cartItemId}")
     public JsonResult<Void> deleteCartItem(
-            @PathVariable Long cartItemId,
+            @PathVariable String cartItemId,
             HttpServletRequest request) {
         Long userId = (Long) request.getAttribute("uid");
         cartService.deleteCartItem(userId, cartItemId);
@@ -75,6 +79,13 @@ public class CartController extends BaseController {
     @PostMapping("/purchase")
     public JsonResult<Map<String, Object>> purchaseProduct(@RequestBody CartItem cartItem, HttpServletRequest request) {
         Long userId = (Long) request.getAttribute("uid");
-        return cartService.purchaseProduct(userId, cartItem.getProductId(), cartItem.getQuantity());
+        try {
+            return cartService.purchaseProduct(userId, String.valueOf(cartItem.getProductId()), cartItem.getQuantity());
+        } catch (UserNotFoundException | ProductNotFoundException | InsuffientStockException e) {
+            return new JsonResult<>(400, null, e.getMessage());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new JsonResult<>(500, null, "购买失败，请重试");
+        }
     }
 }

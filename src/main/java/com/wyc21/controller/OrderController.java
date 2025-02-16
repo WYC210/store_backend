@@ -68,9 +68,10 @@ public class OrderController extends BaseController {
         return new JsonResult<>(OK, success, success ? "支付成功" : "支付失败");
     }
 
-    @DeleteMapping("/{orderId}")
-    public JsonResult<Void> cancelOrder(@PathVariable String orderId) {
-        orderService.cancelOrder(orderId);
-        return new JsonResult<>(OK, null, "订单已取消");
+    @PostMapping("/{orderId}/cancel")
+    public JsonResult<Void> cancelOrder(@PathVariable String orderId, HttpServletRequest request) {
+        Long userId = (Long) request.getAttribute("uid");
+        orderService.cancelOrder(orderId, userId);
+        return new JsonResult<>(OK, null, "订单取消成功");
     }
 }

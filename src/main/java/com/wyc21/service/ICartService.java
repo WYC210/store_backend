@@ -10,7 +10,7 @@ public interface ICartService {
     /**
      * 添加商品到购物车
      */
-    CartItem addToCart(Long userId, Long productId, Integer quantity);
+    CartItem addToCart(Long userId, String productId, Integer quantity);
 
     /**
      * 获取用户的购物车商品列表
@@ -20,17 +20,17 @@ public interface ICartService {
     /**
      * 获取特定的购物车商品
      */
-    CartItem getCartItem(Long userId, Long cartItemId);
+    CartItem getCartItem(Long userId, String cartItemId);
 
     /**
      * 更新购物车商品数量
      */
-    CartItem updateQuantity(Long userId, Long cartItemId, Integer quantity);
+    CartItem updateQuantity(Long userId, String cartItemId, Integer quantity);
 
     /**
      * 删除购物车商品
      */
-    void deleteCartItem(Long userId, Long cartItemId);
+    void deleteCartItem(Long userId, String cartItemId);
 
     /**
      * 清空购物车
@@ -41,9 +41,10 @@ public interface ICartService {
      * 获取购物车总金额
      */
     BigDecimal getCartTotal(Long userId);
+
     /**
      * 购买商品
      */
-     JsonResult<Map<String, Object>> purchaseProduct(Long userId, Long productId, Integer quantity);
+    JsonResult<Map<String, Object>> purchaseProduct(Long userId, String productId, Integer quantity);
 
-} 
+}

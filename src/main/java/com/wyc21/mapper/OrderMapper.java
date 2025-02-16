@@ -46,7 +46,40 @@ public interface OrderMapper {
     List<OrderItem> findOrderItems(@Param("orderId") String orderId);
 
     int updateOrderStatus(@Param("orderId") String orderId,
-                         @Param("status") OrderStatus status,
-                         @Param("oldStatus") OrderStatus oldStatus,
-                         @Param("version") Integer version);
+            @Param("status") OrderStatus status,
+            @Param("oldStatus") OrderStatus oldStatus,
+            @Param("version") Integer version);
+
+    /**
+     * 软删除订单
+     */
+    void softDeleteOrder(@Param("orderId") String orderId, @Param("modifiedUser") String modifiedUser);
+
+    /**
+     * 归档过期订单
+     * 
+     * @return 归档的订单数量
+     */
+    int archiveOrders();
+
+    /**
+     * 归档订单项
+     * 
+     * @return 归档的订单项数量
+     */
+    int archiveOrderItems();
+
+    /**
+     * 删除已归档的订单
+     * 
+     * @return 删除的订单数量
+     */
+    int deleteArchivedOrders();
+
+    /**
+     * 删除已归档的订单项
+     * 
+     * @return 删除的订单项数量
+     */
+    int deleteArchivedOrderItems();
 }

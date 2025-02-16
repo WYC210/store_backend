@@ -12,24 +12,25 @@
     </resultMap>
     
     <resultMap id="CartItemMap" type="com.wyc21.entity.CartItem">
-        <id property="cartItemId" column="cart_item_id"/>
-        <result property="cartId" column="cart_id"/>
-        <result property="productId" column="product_id"/>
-        <result property="quantity" column="quantity"/>
-        <result property="price" column="price"/>
-        <result property="productName" column="product_name"/>
-        <result property="createdUser" column="created_user"/>
-        <result property="createdTime" column="created_time"/>
-        <result property="modifiedTime" column="modified_time"/>
+        <id property="cartItemId" column="cart_item_id" jdbcType="VARCHAR"/>
+        <result property="cartId" column="cart_id" jdbcType="VARCHAR"/>
+        <result property="productId" column="product_id" jdbcType="VARCHAR"/>
+        <result property="quantity" column="quantity" jdbcType="INTEGER"/>
+        <result property="price" column="price" jdbcType="DECIMAL"/>
+        <result property="productName" column="product_name" jdbcType="VARCHAR"/>
+        <result property="imageUrl" column="image_url"/>
+        <result property="createdUser" column="created_user" jdbcType="VARCHAR"/>
+        <result property="createdTime" column="created_time" jdbcType="TIMESTAMP"/>
+        <result property="modifiedTime" column="modified_time" jdbcType="TIMESTAMP"/>
     </resultMap>
 
     <select id="findByUserId" resultMap="CartMap">
         SELECT * FROM wz_carts WHERE user_id = #{userId}
     </select>
     
-    <insert id="insert">
-        INSERT INTO wz_carts (cart_id, user_id, created_user, created_time, modified_time)
-        VALUES (#{cartId}, #{userId}, #{createdUser}, NOW(), NOW())
+    <insert id="insert" parameterType="com.wyc21.entity.Cart">
+        INSERT INTO wz_carts (cart_id, user_id, created_user, created_time)
+        VALUES (#{cartId}, #{userId}, #{createdUser}, NOW())
     </insert>
     
     <select id="findCartItem" resultMap="CartItemMap">
@@ -38,51 +39,53 @@
     </select>
     
     <select id="findCartItemById" resultMap="CartItemMap">
-        SELECT * FROM wz_cart_items WHERE cart_item_id = #{cartItemId}
+        SELECT * FROM wz_cart_items 
+        WHERE cart_item_id = #{cartItemId,jdbcType=VARCHAR}
     </select>
     
-    <insert id="insertCartItem">
+    <insert id="insertCartItem" parameterType="com.wyc21.entity.CartItem">
         INSERT INTO wz_cart_items (
             cart_item_id, cart_id, product_id, quantity, price, 
-            product_name, created_user, created_time, modified_time
+            product_name, created_user, created_time
         ) VALUES (
             #{cartItemId}, #{cartId}, #{productId}, #{quantity}, #{price},
-            #{productName}, #{createdUser}, NOW(), NOW()
+            #{productName}, #{createdUser}, NOW()
         )
     </insert>
     
-    <update id="updateCartItem">
-        UPDATE wz_cart_items SET 
-            quantity = #{quantity},
+    <update id="updateCartItem" parameterType="com.wyc21.entity.CartItem">
+        UPDATE wz_cart_items 
+        SET quantity = #{quantity},
             modified_time = NOW()
         WHERE cart_item_id = #{cartItemId}
     </update>
     
     <delete id="deleteCartItem">
         DELETE FROM wz_cart_items 
-        WHERE cart_id = #{cartId} AND product_id = #{productId}
+        WHERE cart_item_id = #{cartItemId}
     </delete>
     
     <delete id="deleteAllCartItems">
         DELETE FROM wz_cart_items WHERE cart_id = #{cartId}
     </delete>
     
-    <select id="findCartItems" resultType="com.wyc21.entity.CartItem">
+    <select id="findCartItems" resultMap="CartItemMap">
         SELECT 
-            ci.cart_item_id AS cartItemId,
-            ci.cart_id AS cartId,
-            ci.product_id AS productId,
-            ci.quantity AS quantity,
-            ci.price AS price,
-            p.name AS productName,
-            CONCAT('products', p.image_url) AS imageUrl
+            ci.*,
+            p.image_url,
+            o.status
         FROM 
             wz_cart_items ci
         JOIN 
             wz_carts c ON ci.cart_id = c.cart_id
         JOIN 
             wz_products p ON ci.product_id = p.product_id
+        LEFT JOIN 
+            wz_orders o ON o.user_id = c.user_id AND o.order_id = ci.cart_id
         WHERE 
             c.user_id = #{userId}
+            AND (o.status IS NULL OR o.status IN ('PENDING_PAY', 'CREATED'))
+        ORDER BY 
+            ci.created_time DESC
     </select>
 </mapper> 

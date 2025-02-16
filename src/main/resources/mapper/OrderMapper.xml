@@ -26,6 +26,7 @@
         <result property="payTime" column="pay_time"/>
         <result property="paymentId" column="payment_id"/>
         <result property="version" column="version"/>
+        <result property="isDelete" column="is_delete"/>
         <result property="createdUser" column="created_user"/>
         <result property="modifiedUser" column="modified_user"/>
         <result property="modifiedTime" column="modified_time"/>
@@ -35,49 +36,32 @@
     <insert id="insert" parameterType="com.wyc21.entity.Order">
         INSERT INTO wz_orders (
             order_id, user_id, total_amount, status,
-            created_time, expire_time, version, created_user
+            created_time, expire_time, version,
+            created_user, modified_time, modified_user
         ) VALUES (
             #{orderId}, #{userId}, #{totalAmount}, #{status},
-            #{createdTime}, #{expireTime}, #{version}, #{createdUser}
+            #{createdTime}, #{expireTime}, #{version},
+            #{createdUser}, #{modifiedTime}, #{modifiedUser}
         )
     </insert>
 
-   <select id="findById" resultMap="OrderMap">
-        SELECT * FROM wz_orders WHERE order_id = #{orderId}
+    <select id="findById" resultMap="OrderMap">
+        SELECT * FROM wz_orders 
+        WHERE order_id = #{orderId} 
+        AND is_delete = 0
     </select>
 
-    <select id="findByIdForUpdate" resultMap="OrderMap">
-        SELECT * FROM wz_orders WHERE order_id = #{orderId} FOR UPDATE
-    </select>
     <select id="findByUserId" resultMap="OrderMap">
         SELECT * FROM wz_orders 
-        WHERE user_id = #{userId}
+        WHERE user_id = #{userId} 
+        AND is_delete = 0
         ORDER BY created_time DESC
     </select>
-    <update id="updateStatus">
-        UPDATE wz_orders 
-        SET status = #{newStatus},
-            version = version + 1
-        WHERE order_id = #{orderId} 
-        AND status = #{oldStatus}
-        AND version = #{version}
-    </update>
 
-    <update id="updateOrder">
-        UPDATE wz_orders
-        SET status = #{status},
-            pay_time = #{payTime},
-            payment_id = #{paymentId},
-            modified_time = #{modifiedTime},
-            modified_user = #{modifiedUser},
-            version = version + 1
-        WHERE order_id = #{orderId}
-        AND version = #{version}
-    </update>
-
-    <update id="updateOrderStatus">
+    <update id="updateOrder" parameterType="com.wyc21.entity.Order">
         UPDATE wz_orders 
         SET status = #{status},
+            total_amount = #{totalAmount},
             pay_time = #{payTime},
             payment_id = #{paymentId},
             modified_time = #{modifiedTime},
@@ -85,13 +69,13 @@
             version = version + 1
         WHERE order_id = #{orderId} 
         AND version = #{version}
-        AND status = #{oldStatus}
     </update>
 
     <select id="findExpiredOrders" resultMap="OrderMap">
         SELECT * FROM wz_orders 
         WHERE status = 'PENDING_PAY'
         AND expire_time &lt; #{currentTime}
+        AND is_delete = 0
     </select>
 
     <insert id="insertOrderItem" parameterType="com.wyc21.entity.OrderItem">
@@ -108,4 +92,50 @@
         SELECT * FROM wz_order_items 
         WHERE order_id = #{orderId}
     </select>
+
+    <update id="softDeleteOrder">
+        UPDATE wz_orders 
+        SET is_delete = 1,
+            modified_time = NOW(),
+            modified_user = #{modifiedUser}
+        WHERE order_id = #{orderId}
+    </update>
+
+    <insert id="archiveOrders" useGeneratedKeys="true" keyProperty="orderId">
+        INSERT INTO wz_orders_archive
+        SELECT o.*, NOW() as archived_time
+        FROM wz_orders o
+        WHERE o.is_delete = 1
+        AND o.modified_time &lt; DATE_SUB(NOW(), INTERVAL 1 MONTH)
+    </insert>
+
+    <insert id="archiveOrderItems" useGeneratedKeys="true" keyProperty="orderItemId">
+        INSERT INTO wz_order_items_archive
+        SELECT oi.*, NOW() as archived_time
+        FROM wz_order_items oi
+        JOIN wz_orders o ON oi.order_id = o.order_id
+        WHERE o.is_delete = 1
+        AND o.modified_time &lt; DATE_SUB(NOW(), INTERVAL 1 MONTH)
+    </insert>
+
+    <delete id="deleteArchivedOrders">
+        DELETE FROM wz_orders
+        WHERE is_delete = 1
+        AND modified_time &lt; DATE_SUB(NOW(), INTERVAL 1 MONTH)
+        AND EXISTS (
+            SELECT 1 FROM wz_orders_archive oa 
+            WHERE oa.order_id = wz_orders.order_id
+        )
+    </delete>
+
+    <delete id="deleteArchivedOrderItems">
+        DELETE oi FROM wz_order_items oi
+        JOIN wz_orders o ON oi.order_id = o.order_id
+        WHERE o.is_delete = 1
+        AND o.modified_time &lt; DATE_SUB(NOW(), INTERVAL 1 MONTH)
+        AND EXISTS (
+            SELECT 1 FROM wz_order_items_archive oia 
+            WHERE oia.order_item_id = oi.order_item_id
+        )
+    </delete>
 </mapper> 

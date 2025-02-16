@@ -27,7 +27,7 @@ public interface CartMapper {
     /**
      * 根据购物车项ID查找购物车项
      */
-    CartItem findCartItemById(Long cartItemId);
+    CartItem findCartItemById(@Param("cartItemId") String cartItemId);
 
     /**
      * 插入购物车项
@@ -42,7 +42,7 @@ public interface CartMapper {
     /**
      * 删除购物车项
      */
-    void deleteCartItem(@Param("cartId") Long cartId, @Param("productId") Long productId);
+    void deleteCartItem(@Param("cartItemId") String cartItemId);
 
     /**
      * 删除购物车所有商品

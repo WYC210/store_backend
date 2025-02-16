@@ -2,18 +2,23 @@ package com.wyc21.entity;
 
 import lombok.Data;
 import java.math.BigDecimal;
-import java.util.Date;
+import java.time.LocalDateTime;
 
 @Data
-public class CartItem {
-    private Long cartItemId;
-    private Long cartId;
-    private Long productId;
+public class CartItem extends BaseEntity {
+    private String cartItemId;
+    private String cartId;
+    private String productId;
     private Integer quantity;
     private BigDecimal price;
     private String productName;
-    private String createdUser;
-    private Date createdTime;
-    private Date modifiedTime;
-    private String imageUrl; 
+    private String imageUrl;
+
+    public String getCartItemId() {
+        return cartItemId;
+    }
+
+    public void setCartItemId(String cartItemId) {
+        this.cartItemId = cartItemId;
+    }
 }

@@ -61,7 +61,7 @@ public class CartServiceImpl implements ICartService {
 
     @Override
     @Transactional
-    public JsonResult<Map<String, Object>> purchaseProduct(Long userId, Long productId, Integer quantity) {
+    public JsonResult<Map<String, Object>> purchaseProduct(Long userId, String productId, Integer quantity) {
         // 1. 检查用户是否存在
         User user = userMapper.findByUid(userId);
         if (user == null) {
@@ -69,7 +69,7 @@ public class CartServiceImpl implements ICartService {
         }
 
         // 2. 检查商品是否存在
-        Product product = productMapper.findById(productId);
+        Product product = productMapper.findById(Long.parseLong(productId));
         if (product == null) {
             throw new ProductNotFoundException("商品不存在");
         }
@@ -100,7 +100,7 @@ public class CartServiceImpl implements ICartService {
         OrderItem orderItem = new OrderItem();
         orderItem.setOrderItemId(idGenerator.nextId()); // 生成订单项ID
         orderItem.setOrderId(orderId);
-        orderItem.setProductId(productId);
+        orderItem.setProductId(Long.parseLong(productId));
         orderItem.setProductName(product.getName());
         orderItem.setQuantity(quantity);
         orderItem.setPrice(product.getPrice());
@@ -112,7 +112,7 @@ public class CartServiceImpl implements ICartService {
         orderMapper.insertOrderItem(orderItem);
 
         // 8. 扣减库存
-        productMapper.decreaseStock(productId, quantity);
+        productMapper.decreaseStock(Long.parseLong(productId), quantity);
 
         // 9. 更新订单状态为待支付
         order.setStatus(OrderStatus.PENDING_PAY);
@@ -144,7 +144,7 @@ public class CartServiceImpl implements ICartService {
 
     @Override
     @Transactional
-    public CartItem addToCart(Long userId, Long productId, Integer quantity) {
+    public CartItem addToCart(Long userId, String productId, Integer quantity) {
         // 检查用户是否存在
         User user = userMapper.findByUid(userId);
         if (user == null) {
@@ -152,7 +152,7 @@ public class CartServiceImpl implements ICartService {
         }
 
         // 检查商品是否存在
-        Product product = productMapper.findById(productId);
+        Product product = productMapper.findById(Long.parseLong(productId));
         if (product == null) {
             throw new ProductNotFoundException("商品不存在");
         }
@@ -173,7 +173,7 @@ public class CartServiceImpl implements ICartService {
         }
 
         // 检查商品是否已在购物车中
-        CartItem existingItem = cartMapper.findCartItem(cart.getCartId(), productId);
+        CartItem existingItem = cartMapper.findCartItem(cart.getCartId(), Long.parseLong(productId));
         if (existingItem != null) {
             // 直接更新为新的数量，而不是相加
             existingItem.setQuantity(quantity);
@@ -182,13 +182,12 @@ public class CartServiceImpl implements ICartService {
         } else {
             // 添加新商品
             CartItem newItem = new CartItem();
-            newItem.setCartItemId(idGenerator.nextId());
-            newItem.setCartId(cart.getCartId());
-            newItem.setProductId(productId);
+            newItem.setCartItemId(String.valueOf(idGenerator.nextId()));
+            newItem.setCartId(String.valueOf(cart.getCartId()));
+            newItem.setProductId(String.valueOf(Long.parseLong(productId)));
             newItem.setQuantity(quantity);
             newItem.setPrice(product.getPrice());
             newItem.setProductName(product.getName());
-            newItem.setImageUrl(product.getImageUrl());
             newItem.setCreatedUser("system");
             cartMapper.insertCartItem(newItem);
             return newItem;
@@ -210,13 +209,16 @@ public class CartServiceImpl implements ICartService {
     }
 
     @Override
-    public CartItem getCartItem(Long userId, Long cartItemId) {
+    public CartItem getCartItem(Long userId, String cartItemId) {
         Cart cart = cartMapper.findByUserId(userId);
         if (cart == null) {
             throw new CartNotFoundException("购物车不存在");
         }
+        // CartItem item = cartMapper.findCartItemById(String.valueOf(cartItemId));
+        // if (item == null || !item.getCartId().equals(cart.getCartId())) {
+
         CartItem item = cartMapper.findCartItemById(cartItemId);
-        if (item == null || !item.getCartId().equals(cart.getCartId())) {
+        if (item == null || !item.getCartId().equals(String.valueOf(cart.getCartId()))) {
             throw new CartNotFoundException("购物车商品不存在");
         }
         return item;
@@ -224,11 +226,11 @@ public class CartServiceImpl implements ICartService {
 
     @Override
     @Transactional
-    public CartItem updateQuantity(Long userId, Long cartItemId, Integer quantity) {
+    public CartItem updateQuantity(Long userId, String cartItemId, Integer quantity) {
         CartItem item = getCartItem(userId, cartItemId);
 
         // 检查库存
-        Product product = productMapper.findById(item.getProductId());
+        Product product = productMapper.findById(Long.parseLong(item.getProductId()));
         if (product.getStock() < quantity) {
             throw new ProductNotFoundException("商品库存不足");
         }
@@ -240,9 +242,21 @@ public class CartServiceImpl implements ICartService {
 
     @Override
     @Transactional
-    public void deleteCartItem(Long userId, Long cartItemId) {
-        CartItem item = getCartItem(userId, cartItemId);
-        cartMapper.deleteCartItem(item.getCartId(), item.getProductId());
+    public void deleteCartItem(Long userId, String cartItemId) {
+        CartItem item = cartMapper.findCartItemById(cartItemId);
+
+        if (item == null) {
+            throw new CartNotFoundException("购物车商品不存在");
+        }
+
+        // 验证购物车项是否属于当前用户
+        Cart cart = cartMapper.findByUserId(userId);
+        if (cart == null || !item.getCartId().equals(String.valueOf(cart.getCartId()))) {
+            throw new CartNotFoundException("无权操作此购物车商品");
+        }
+
+        // 验证通过，执行删除
+        cartMapper.deleteCartItem(cartItemId);
     }
 
     @Override

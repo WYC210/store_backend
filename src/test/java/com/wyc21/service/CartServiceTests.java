@@ -41,7 +41,7 @@ public class CartServiceTests {
         Long productId = 1L; // iPhone 14
         Integer quantity = 1;
 
-        CartItem cartItem = cartService.addToCart(userId, productId, quantity);
+        CartItem cartItem = cartService.addToCart(userId, String.valueOf(productId), quantity);
 
         assertNotNull(cartItem, "购物车项不应为null");
         assertEquals(productId, cartItem.getProductId(), "商品ID应匹配");
@@ -61,7 +61,7 @@ public class CartServiceTests {
         Integer quantity = 1;
 
         assertThrows(UserNotFoundException.class, () -> {
-            cartService.addToCart(invalidUserId, productId, quantity);
+            cartService.addToCart(invalidUserId, String.valueOf(productId), quantity);
         });
 
         log.info("无效用户测试完成");
@@ -76,7 +76,7 @@ public class CartServiceTests {
         Integer quantity = 1;
 
         assertThrows(ProductNotFoundException.class, () -> {
-            cartService.addToCart(userId, invalidProductId, quantity);
+            cartService.addToCart(userId, String.valueOf(invalidProductId), quantity);
         });
 
         log.info("无效商品测试完成");
@@ -111,7 +111,7 @@ public class CartServiceTests {
         Long cartItemId = 1L;
         Integer newQuantity = 2;
 
-        CartItem updatedItem = cartService.updateQuantity(userId, cartItemId, newQuantity);
+        CartItem updatedItem = cartService.updateQuantity(userId, String.valueOf(cartItemId), newQuantity);
 
         assertNotNull(updatedItem, "更新后的购物车项不应为null");
         assertEquals(newQuantity, updatedItem.getQuantity(), "商品数量应该更新成功");
@@ -126,11 +126,11 @@ public class CartServiceTests {
         Long userId = 2L;
         Long cartItemId = 1L;
 
-        cartService.deleteCartItem(userId, cartItemId);
+        cartService.deleteCartItem(userId, String.valueOf(cartItemId));
 
         // 验证删除后无法找到该商品
         assertThrows(CartNotFoundException.class, () -> {
-            cartService.getCartItem(userId, cartItemId);
+            cartService.getCartItem(userId, String.valueOf(cartItemId));
         });
 
         log.info("删除购物车商品测试完成");

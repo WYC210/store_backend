@@ -32,8 +32,20 @@ public interface IOrderService {
 
     /**
      * 取消订单
+     * 
+     * @param orderId 订单ID
+     * @deprecated 使用 {@link #cancelOrder(String, Long)} 代替
      */
+    @Deprecated
     void cancelOrder(String orderId);
+
+    /**
+     * 取消订单
+     * 
+     * @param orderId 订单ID
+     * @param userId  用户ID
+     */
+    void cancelOrder(String orderId, Long userId);
 
     /**
      * 检查并处理过期订单
