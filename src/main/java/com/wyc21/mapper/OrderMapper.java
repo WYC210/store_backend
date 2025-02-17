@@ -7,6 +7,7 @@ import org.apache.ibatis.annotations.Param;
 import java.time.LocalDateTime;
 import java.util.List;
 import com.wyc21.entity.OrderStatus;
+import java.util.Map;
 
 @Mapper
 public interface OrderMapper {
@@ -45,10 +46,7 @@ public interface OrderMapper {
      */
     List<OrderItem> findOrderItems(@Param("orderId") String orderId);
 
-    int updateOrderStatus(@Param("orderId") String orderId,
-            @Param("status") OrderStatus status,
-            @Param("oldStatus") OrderStatus oldStatus,
-            @Param("version") Integer version);
+    void updateOrderStatus(Map<String, Object> params);
 
     /**
      * 软删除订单

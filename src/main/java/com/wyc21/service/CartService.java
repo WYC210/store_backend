@@ -21,4 +21,8 @@ public interface CartService {
 
     // 检查商品是否在购物车中
     boolean isProductInCart(Long userId, Long productId);
+
+    // 添加并检查购物车
+    void addToCartWithCheck(Long userId, Long productId, Integer quantity);
+
 }

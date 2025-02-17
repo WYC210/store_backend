@@ -34,6 +34,9 @@ import com.wyc21.service.ex.OrderNotFoundException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import java.util.Collections;
 import com.wyc21.service.ex.AccessDeniedException;
+import java.util.Map;
+import java.util.HashMap;
+import com.wyc21.util.JsonResult;
 
 @Service
 @Slf4j
@@ -97,12 +100,22 @@ public class OrderServiceImpl implements IOrderService {
             if (product.getStock() < item.getQuantity()) {
                 throw new InsuffientStockException("商品库存不足：" + product.getName());
             }
+
+            // 使用前端传来的价格，但需要验证价格是否正确
+            log.info("验证商品价格: 商品ID = {}, 数据库价格 = {}, 前端价格 = {}", 
+                     item.getProductId(), product.getPrice(), item.getPrice());
+            
+            if (!product.getPrice().equals(item.getPrice())) {
+                log.error("商品价格不一致: 商品ID = {}, 数据库价格 = {}, 前端价格 = {}", 
+                          item.getProductId(), product.getPrice(), item.getPrice());
+                throw new ProductNotFoundException("商品价格有变化，请刷新后重试");
+            }
         }
 
-        // 3. 计算订单总金额
+        // 3. 计算订单总金额（只计算选中的商品）
         BigDecimal totalAmount = items.stream()
-                .map(item -> item.getPrice().multiply(new BigDecimal(item.getQuantity())))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+            .map(item -> item.getPrice().multiply(new BigDecimal(item.getQuantity())))
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         // 4. 创建订单
         Order order = new Order();
@@ -113,17 +126,16 @@ public class OrderServiceImpl implements IOrderService {
         order.setStatus(OrderStatus.CREATED);
         order.setCreatedTime(LocalDateTime.now());
         order.setExpireTime(LocalDateTime.now().plusMinutes(30));
-        order.setVersion(1); // 初始版本号
-        order.setCreatedUser("system");
+        order.setVersion(1);
+        order.setCreatedUser(user.getUsername());
         order.setModifiedTime(LocalDateTime.now());
-        order.setModifiedUser("system");
+        order.setModifiedUser(user.getUsername());
 
         // 5. 保存订单
         orderMapper.insert(order);
 
         // 6. 保存订单商品并扣减库存
         for (CartItem item : items) {
-            // 创建订单项
             OrderItem orderItem = new OrderItem();
             orderItem.setOrderItemId(idGenerator.nextId());
             orderItem.setOrderId(order.getOrderId());
@@ -131,9 +143,9 @@ public class OrderServiceImpl implements IOrderService {
             orderItem.setProductName(item.getProductName());
             orderItem.setQuantity(item.getQuantity());
             orderItem.setPrice(item.getPrice());
-            orderItem.setCreatedUser("system");
+            orderItem.setCreatedUser(user.getUsername());
             orderItem.setModifiedTime(LocalDateTime.now());
-            orderItem.setModifiedUser("system");
+            orderItem.setModifiedUser(user.getUsername());
             orderMapper.insertOrderItem(orderItem);
 
             // 扣减库存
@@ -142,12 +154,15 @@ public class OrderServiceImpl implements IOrderService {
 
         // 7. 更新订单状态为待支付
         order.setStatus(OrderStatus.PENDING_PAY);
-        // 不要手动修改版本号，由数据库管理
-        orderMapper.updateOrder(order);
+        Map<String, Object> params = new HashMap<>();
+        params.put("orderId", orderId);
+        params.put("status", OrderStatus.PENDING_PAY.name());
+        params.put("modifiedUser", user.getUsername());
+        orderMapper.updateOrderStatus(params);
 
         // 8. 设置Redis过期时间
         String orderKey = "order:" + order.getOrderId();
-        redisTemplate.opsForValue().set(orderKey, order.getStatus().name(),
+        redisTemplate.opsForValue().set(orderKey, OrderStatus.PENDING_PAY.name(),
                 ORDER_EXPIRE_MINUTES, TimeUnit.MINUTES);
 
         return order;
@@ -359,5 +374,101 @@ public class OrderServiceImpl implements IOrderService {
         orders.sort((o1, o2) -> o2.getCreatedTime().compareTo(o1.getCreatedTime()));
 
         return orders;
+    }
+
+    @Override
+    public void updateOrderStatus(String orderId, String status, String modifiedUser) {
+        // Logic to update the order status
+        Map<String, Object> params = new HashMap<>();
+        params.put("orderId", orderId);
+        params.put("status", status);
+        params.put("modifiedUser", modifiedUser);
+
+        orderMapper.updateOrderStatus(params);
+    }
+
+    @Override
+    @Transactional
+    public JsonResult<Map<String, Object>> purchaseProduct(Long userId, List<CartItem> items) {
+        // 1. 检查用户是否存在
+        User user = userMapper.findByUid(userId);
+        if (user == null) {
+            throw new UserNotFoundException("用户不存在");
+        }
+
+        // 2. 验证商品库存和价格
+        for (CartItem item : items) {
+            Product product = productMapper.findById(Long.parseLong(item.getProductId()));
+            if (product == null) {
+                throw new ProductNotFoundException("商品不存在：" + item.getProductId());
+            }
+            if (product.getStock() < item.getQuantity()) {
+                throw new InsuffientStockException("商品库存不足：" + product.getName());
+            }
+            // 验证价格
+            if (!product.getPrice().equals(item.getPrice())) {
+                throw new ProductNotFoundException("商品价格有变化，请刷新后重试");
+            }
+        }
+
+        // 3. 计算订单总金额
+        BigDecimal totalAmount = items.stream()
+            .map(item -> item.getPrice().multiply(new BigDecimal(item.getQuantity())))
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        // 4. 创建订单
+        Order order = new Order();
+        String orderId = generateOrderId();
+        order.setOrderId(orderId);
+        order.setUserId(userId);
+        order.setTotalAmount(totalAmount);
+        order.setStatus(OrderStatus.CREATED);
+        order.setCreatedTime(LocalDateTime.now());
+        order.setExpireTime(LocalDateTime.now().plusMinutes(30));
+        order.setVersion(1);
+        order.setCreatedUser(user.getUsername());
+        order.setModifiedTime(LocalDateTime.now());
+        order.setModifiedUser(user.getUsername());
+
+        // 5. 保存订单
+        orderMapper.insert(order);
+
+        // 6. 保存订单商品并扣减库存
+        for (CartItem item : items) {
+            OrderItem orderItem = new OrderItem();
+            orderItem.setOrderItemId(idGenerator.nextId());
+            orderItem.setOrderId(order.getOrderId());
+            orderItem.setProductId(Long.parseLong(item.getProductId()));
+            orderItem.setProductName(item.getProductName());
+            orderItem.setQuantity(item.getQuantity());
+            orderItem.setPrice(item.getPrice());
+            orderItem.setCreatedUser(user.getUsername());
+            orderItem.setModifiedTime(LocalDateTime.now());
+            orderItem.setModifiedUser(user.getUsername());
+            orderMapper.insertOrderItem(orderItem);
+
+            // 扣减库存
+            productMapper.decreaseStock(Long.parseLong(item.getProductId()), item.getQuantity());
+        }
+
+        // 7. 更新订单状态为待支付
+        order.setStatus(OrderStatus.PENDING_PAY);
+        Map<String, Object> params = new HashMap<>();
+        params.put("orderId", orderId);
+        params.put("status", OrderStatus.PENDING_PAY.name());
+        params.put("modifiedUser", user.getUsername());
+        orderMapper.updateOrderStatus(params);
+
+        // 8. 设置Redis过期时间
+        String orderKey = "order:" + order.getOrderId();
+        redisTemplate.opsForValue().set(orderKey, OrderStatus.PENDING_PAY.name(),
+                ORDER_EXPIRE_MINUTES, TimeUnit.MINUTES);
+
+        // 9. 返回购买的商品信息
+        Map<String, Object> responseData = new HashMap<>();
+        responseData.put("orderId", orderId);
+        responseData.put("totalAmount", order.getTotalAmount());
+
+        return new JsonResult<>(200, responseData, "购买成功");
     }
 }

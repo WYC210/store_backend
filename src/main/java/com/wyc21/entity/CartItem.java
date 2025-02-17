@@ -13,6 +13,7 @@ public class CartItem extends BaseEntity {
     private BigDecimal price;
     private String productName;
     private String imageUrl;
+    private String orderStatus;
 
     public String getCartItemId() {
         return cartItemId;

@@ -3,6 +3,8 @@ package com.wyc21.service;
 import com.wyc21.entity.Order;
 import com.wyc21.entity.CartItem;
 import java.util.List;
+import java.util.Map;
+import com.wyc21.util.JsonResult;
 
 public interface IOrderService {
     /**
@@ -51,4 +53,18 @@ public interface IOrderService {
      * 检查并处理过期订单
      */
     void checkExpiredOrders();
+
+    /**
+     * 更新订单状态
+     */
+    void updateOrderStatus(String orderId, String status, String modifiedUser);
+
+    /**
+     * 购买商品
+     * 
+     * @param userId 用户ID
+     * @param items  购买的商品列表
+     * @return 购买结果
+     */
+    JsonResult<Map<String, Object>> purchaseProduct(Long userId, List<CartItem> items);
 }

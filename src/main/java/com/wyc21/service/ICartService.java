@@ -7,10 +7,11 @@ import java.util.Map;
 import com.wyc21.util.JsonResult;
 
 public interface ICartService {
+
     /**
-     * 添加商品到购物车
+     * 添加商品到购物车（带状态检查）
      */
-    CartItem addToCart(Long userId, String productId, Integer quantity);
+    CartItem addToCartWithCheck(Long userId, String productId, Integer quantity);
 
     /**
      * 获取用户的购物车商品列表
@@ -41,10 +42,5 @@ public interface ICartService {
      * 获取购物车总金额
      */
     BigDecimal getCartTotal(Long userId);
-
-    /**
-     * 购买商品
-     */
-    JsonResult<Map<String, Object>> purchaseProduct(Long userId, String productId, Integer quantity);
 
 }

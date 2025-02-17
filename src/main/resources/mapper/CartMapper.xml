@@ -88,4 +88,21 @@
         ORDER BY 
             ci.created_time DESC
     </select>
+
+    <select id="findCartItemsWithStatus" resultMap="CartItemMap">
+        SELECT 
+            ci.*,
+            p.image_url,
+            o.status as order_status
+        FROM 
+            wz_cart_items ci
+        JOIN 
+            wz_carts c ON ci.cart_id = c.cart_id
+        JOIN 
+            wz_products p ON ci.product_id = p.product_id
+        LEFT JOIN 
+            wz_orders o ON o.order_id = ci.cart_id
+        WHERE 
+            c.user_id = #{userId}
+    </select>
 </mapper> 

@@ -41,7 +41,7 @@ public class CartServiceTests {
         Long productId = 1L; // iPhone 14
         Integer quantity = 1;
 
-        CartItem cartItem = cartService.addToCart(userId, String.valueOf(productId), quantity);
+        CartItem cartItem = cartService.addToCartWithCheck(userId, String.valueOf(productId), quantity);
 
         assertNotNull(cartItem, "购物车项不应为null");
         assertEquals(productId, cartItem.getProductId(), "商品ID应匹配");
@@ -61,7 +61,7 @@ public class CartServiceTests {
         Integer quantity = 1;
 
         assertThrows(UserNotFoundException.class, () -> {
-            cartService.addToCart(invalidUserId, String.valueOf(productId), quantity);
+            cartService.addToCartWithCheck(invalidUserId, String.valueOf(productId), quantity);
         });
 
         log.info("无效用户测试完成");
@@ -76,7 +76,7 @@ public class CartServiceTests {
         Integer quantity = 1;
 
         assertThrows(ProductNotFoundException.class, () -> {
-            cartService.addToCart(userId, String.valueOf(invalidProductId), quantity);
+            cartService.addToCartWithCheck(userId, String.valueOf(invalidProductId), quantity); 
         });
 
         log.info("无效商品测试完成");

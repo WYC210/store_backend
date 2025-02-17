@@ -15,27 +15,24 @@ import com.wyc21.service.ex.CartNotFoundException;
 import com.wyc21.service.ex.ProductNotFoundException;
 import com.wyc21.service.ex.UserNotFoundException;
 import com.wyc21.service.ex.InsuffientStockException;
+import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RestController
 @RequestMapping("/cart")
 public class CartController extends BaseController {
 
+    private static final Logger log = LoggerFactory.getLogger(CartController.class);
+
     @Autowired
     private ICartService cartService;
-
-    @PostMapping("/add")
-    public JsonResult<CartItem> addToCart(@RequestBody CartItem cartItem, HttpServletRequest request) {
-        Long userId = (Long) request.getAttribute("uid");
-        CartItem added = cartService.addToCart(userId, cartItem.getProductId(), cartItem.getQuantity());
-        return new JsonResult<>(OK, added, "添加成功");
-    }
 
     @GetMapping
     public JsonResult<List<CartItem>> getCartItems(HttpServletRequest request) {
         Long userId = (Long) request.getAttribute("uid");
         List<CartItem> items = cartService.getCartItems(userId);
 
-        // 即使购物车为空，也返回一个空列表和成功状态
         if (items == null || items.isEmpty()) {
             return new JsonResult<>(OK, new ArrayList<>(), "购物车为空");
         }
@@ -76,16 +73,10 @@ public class CartController extends BaseController {
         return new JsonResult<>(OK, total);
     }
 
-    @PostMapping("/purchase")
-    public JsonResult<Map<String, Object>> purchaseProduct(@RequestBody CartItem cartItem, HttpServletRequest request) {
+    @PostMapping("/add")
+    public JsonResult<CartItem> addToCart(@RequestBody CartItem cartItem, HttpServletRequest request) {
         Long userId = (Long) request.getAttribute("uid");
-        try {
-            return cartService.purchaseProduct(userId, String.valueOf(cartItem.getProductId()), cartItem.getQuantity());
-        } catch (UserNotFoundException | ProductNotFoundException | InsuffientStockException e) {
-            return new JsonResult<>(400, null, e.getMessage());
-        } catch (Exception e) {
-            e.printStackTrace();
-            return new JsonResult<>(500, null, "购买失败，请重试");
-        }
+        CartItem added = cartService.addToCartWithCheck(userId, cartItem.getProductId(), cartItem.getQuantity());
+        return new JsonResult<>(OK, added, "添加成功");
     }
 }

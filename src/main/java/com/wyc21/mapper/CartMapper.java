@@ -53,4 +53,9 @@ public interface CartMapper {
      * 获取用户购物车所有商品
      */
     List<CartItem> findCartItems(Long userId);
+
+    /**
+     * 查询购物车项及其订单状态
+     */
+    List<CartItem> findCartItemsWithStatus(@Param("userId") Long userId);
 }

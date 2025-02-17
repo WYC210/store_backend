@@ -71,7 +71,7 @@ public class CartServiceImplTest {
         when(cartMapper.findByUserId(user.getUid())).thenReturn(cart);
         when(idGenerator.nextId()).thenReturn(1L);
 
-        CartItem cartItem = cartService.addToCart(user.getUid(), String.valueOf(product.getProductId()), 1);
+        CartItem cartItem = cartService.addToCartWithCheck(user.getUid(), String.valueOf(product.getProductId()), 1);
 
         assertNotNull(cartItem);
         assertEquals(product.getProductId(), cartItem.getProductId());

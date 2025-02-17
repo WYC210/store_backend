@@ -138,4 +138,12 @@
             WHERE oia.order_item_id = oi.order_item_id
         )
     </delete>
+
+    <update id="updateOrderStatus" parameterType="map">
+        UPDATE wz_orders 
+        SET status = #{status}, 
+            modified_time = NOW(), 
+            modified_user = #{modifiedUser} 
+        WHERE order_id = #{orderId}
+    </update>
 </mapper> 
