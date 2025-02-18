@@ -25,4 +25,6 @@ public interface CartService {
     // 添加并检查购物车
     void addToCartWithCheck(String userId, Long productId, Integer quantity);
 
+    void updateCartItemPaid_quantity(String userId, String productId, Integer paidQuantity);
+   
 }

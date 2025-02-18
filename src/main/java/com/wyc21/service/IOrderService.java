@@ -16,6 +16,7 @@ public interface IOrderService {
      * 从购物车创建订单
      */
     Order createOrderFromCart(String userId, List<String> cartItemIds);
+    
 
     /**
      * 获取用户的所有订单
@@ -57,4 +58,5 @@ public interface IOrderService {
      */
     JsonResult<Map<String, Object>> purchaseProduct(String userId, List<CartItem> items);
 
+  
 }

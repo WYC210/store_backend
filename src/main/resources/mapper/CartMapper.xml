@@ -134,4 +134,24 @@
         WHERE c.user_id = #{userId}
         AND c.is_checked_out = 0
     </select>
+
+    <select id="selectCartItemPaid_quantity" resultType="com.wyc21.entity.CartItem">
+        SELECT 
+            product_id, 
+            product_name,
+            quantity,
+            paid_quantity,
+            (quantity - paid_quantity) as available_quantity
+        FROM wz_cart_items
+        WHERE cart_id = #{cartId}
+    </select>
+
+    <update id="updateCartItemPaid_quantity">
+        UPDATE wz_cart_items 
+        SET paid_quantity = paid_quantity + #{paidQuantity}
+        WHERE cart_id IN (
+            SELECT cart_id FROM wz_carts WHERE user_id = #{userId}
+        ) 
+        AND product_id = #{productId}
+    </update>
 </mapper> 

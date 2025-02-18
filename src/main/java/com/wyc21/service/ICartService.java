@@ -51,6 +51,16 @@ public interface ICartService {
      */
     List<CartItem> getCartItemsByIds(String userId, List<String> cartItemIds);
 
+    /**
+     * 更新购物车项的已支付数量
+     */
+    void updateCartItemPaid_quantity(String userId, String productId, Integer paidQuantity);
+
+    /**
+     * 获取购物车项的可用数量
+     */
+    List<CartItem> getCartItemAvailableQuantity(String cartId);
+
     @Data
     public static class CartItemRequest {
         private String productId;

@@ -39,6 +39,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import lombok.extern.slf4j.Slf4j;
 import lombok.Data;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -68,7 +69,20 @@ public class CartServiceImpl implements ICartService {
 
     @Override
     public List<CartItem> getCartItems(String userId) {
-        return cartMapper.findCartItems(userId);
+        // 获取用户的购物车商品
+        List<CartItem> cartItems = cartMapper.findCartItems(userId);
+
+        // 过滤掉已支付的商品
+        List<CartItem> availableItems = cartItems.stream()
+            .filter(item -> item.getQuantity() > item.getPaidQuantity())
+            .collect(Collectors.toList());
+
+        // 如果没有可用商品，返回 null
+        if (availableItems.isEmpty()) {
+            return null; // 或者可以选择返回 Collections.emptyList()，根据需求决定
+        }
+
+        return availableItems;
     }
 
     @Override
@@ -309,4 +323,29 @@ public class CartServiceImpl implements ICartService {
             throw new InsuffientStockException("商品库存不足");
         }
     }
+
+    @Override
+    @Transactional
+    public void updateCartItemPaid_quantity(String userId, String productId, Integer paidQuantity) {
+        if (userId == null || productId == null || paidQuantity == null) {
+            log.error("更新购物车支付数量参数错误: userId={}, productId={}, paidQuantity={}",
+                    userId, productId, paidQuantity);
+            throw new IllegalArgumentException("参数不能为空");
+        }
+
+        try {
+            cartMapper.updateCartItemPaid_quantity(userId, productId, paidQuantity);
+            log.info("更新购物车支付数量成功: userId={}, productId={}, paidQuantity={}",
+                    userId, productId, paidQuantity);
+        } catch (Exception e) {
+            log.error("更新购物车支付数量失败", e);
+            throw new RuntimeException("更新购物车支付数量失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public List<CartItem> getCartItemAvailableQuantity(String cartId) {
+        return cartMapper.selectCartItemPaid_quantity(cartId);
+    }
+
 }

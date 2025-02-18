@@ -72,4 +72,18 @@ public interface CartMapper {
      * 根据用户ID查找购物车项列表
      */
     List<CartItem> findCartItemsByUserId(String userId);
+
+    /**
+     * 更新购物车项的已支付数量
+     */
+    void updateCartItemPaid_quantity(
+        @Param("userId") String userId,
+        @Param("productId") String productId,
+        @Param("paidQuantity") Integer paidQuantity
+    );
+
+    /**
+     * 查询购物车项的可用数量
+     */
+    List<CartItem> selectCartItemPaid_quantity(@Param("cartId") String cartId);
 }

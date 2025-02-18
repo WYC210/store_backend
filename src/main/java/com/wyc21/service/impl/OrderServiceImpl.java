@@ -92,9 +92,9 @@ public class OrderServiceImpl implements IOrderService {
         order.setExpireTime(LocalDateTime.now().plusMinutes(30)); // 设置过期时间
         order.setVersion(1);
         order.setCreatedUser(userId);
-      
+
         order.setModifiedTime(LocalDateTime.now());
-       
+
         // 插入订单到数据库
         orderMapper.insert(order);
         return order;
@@ -288,7 +288,6 @@ public class OrderServiceImpl implements IOrderService {
             if (order.getExpireTime().isBefore(LocalDateTime.now())) {
                 // 更新订单状态为过期
                 order.setStatus(OrderStatus.EXPIRED);
-                // order.setVersion(order.getVersion() + 1);
                 order.setModifiedTime(LocalDateTime.now());
                 order.setModifiedUser("system");
 
@@ -319,7 +318,17 @@ public class OrderServiceImpl implements IOrderService {
         order.setPayTime(LocalDateTime.now());
         order.setModifiedTime(LocalDateTime.now());
         order.setModifiedUser("system");
-        // 不要手动修改版本号
+
+        // 获取订单项并更新购物车已支付数量
+        List<OrderItem> orderItems = orderMapper.findOrderItems(orderId);
+        if (orderItems != null && !orderItems.isEmpty()) {
+            for (OrderItem item : orderItems) {
+                cartService.updateCartItemPaid_quantity(
+                        order.getUserId(),
+                        item.getProductId(),
+                        item.getQuantity());
+            }
+        }
 
         int updated = orderMapper.updateOrder(order);
         if (updated > 0) {
@@ -334,7 +343,7 @@ public class OrderServiceImpl implements IOrderService {
     @Scheduled(fixedDelay = 1000000) // 每10分钟检查一次
     @Transactional
     public void checkExpiredOrders() {
-        // 检查数据库是否已初始化!isDatabaseInitialized()
+
         if (!isDatabaseInitialized()) {
             log.warn("数据库尚未初始化，跳过过期订单检查");
             return;

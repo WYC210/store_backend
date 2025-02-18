@@ -15,6 +15,9 @@ public class CartItem extends BaseEntity {
     private String imageUrl;
     private String userId;
     private String orderStatus;
+    private Boolean isPay;
+    private Integer paidQuantity;
+    private Integer availableQuantity;
 
     public String getCartItemId() {
         return cartItemId;

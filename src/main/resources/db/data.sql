@@ -68,9 +68,9 @@ INSERT INTO wz_carts (cart_id, user_id, created_user, created_time) VALUES
 ('2', '2', 'system', NOW());
 
 -- 7. 初始化购物车项数据
-INSERT INTO wz_cart_items (cart_item_id, cart_id, product_id, quantity, price, product_name, created_user, created_time) VALUES
-('1', '1', '1', 1, 6999.00, 'iPhone 14', 'system', NOW()),
-('2', '1', '2', 1, 12999.00, 'MacBook Pro', 'system', NOW());
+INSERT INTO wz_cart_items (cart_item_id, cart_id, product_id, quantity, price, product_name, created_user, created_time, is_pay) VALUES
+('1', '1', '1', 1, 6999.00, 'iPhone 14', 'system', NOW(), FALSE),
+('2', '1', '2', 1, 12999.00, 'MacBook Pro', 'system', NOW(), FALSE);
 
 -- 8. 初始化订单数据
 INSERT INTO wz_orders (order_id, user_id, total_amount, status, payment_id, created_user, created_time) VALUES

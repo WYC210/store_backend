@@ -141,6 +141,7 @@ CREATE TABLE IF NOT EXISTS wz_cart_items (
     created_user VARCHAR(20),
     created_time DATETIME DEFAULT CURRENT_TIMESTAMP,
     modified_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    paid_quantity INT DEFAULT 0,  -- 新增字段，记录已支付的数量
     FOREIGN KEY (cart_id) REFERENCES wz_carts(cart_id) ON DELETE CASCADE,
     FOREIGN KEY (product_id) REFERENCES wz_products(product_id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
