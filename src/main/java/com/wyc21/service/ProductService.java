@@ -10,7 +10,7 @@ public interface ProductService {
     PageResult<Product> getProducts(Long categoryId, String keyword, int pageNum, int pageSize, String imageUrl);
 
     // 获取商品详情
-    Product getProduct(Long productId);
+    Product getProduct(String productId);
 
     // 获取商品评论
     List<ProductReview> getProductReviews(Long productId, int limit);

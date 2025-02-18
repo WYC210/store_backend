@@ -36,12 +36,10 @@
     <insert id="insert" parameterType="com.wyc21.entity.Order">
         INSERT INTO wz_orders (
             order_id, user_id, total_amount, status,
-            created_time, expire_time, version,
-            created_user, modified_time, modified_user
+            created_time, expire_time, created_user
         ) VALUES (
             #{orderId}, #{userId}, #{totalAmount}, #{status},
-            #{createdTime}, #{expireTime}, #{version},
-            #{createdUser}, #{modifiedTime}, #{modifiedUser}
+            #{createdTime}, #{expireTime}, #{createdUser}
         )
     </insert>
 
@@ -78,14 +76,41 @@
         AND is_delete = 0
     </select>
 
+    <insert id="insertOrder" parameterType="com.wyc21.entity.Order">
+        INSERT INTO wz_orders (
+            order_id, user_id, total_amount, status, 
+            created_user, created_time, modified_user, modified_time
+        ) VALUES (
+            #{orderId}, #{userId}, #{totalAmount}, #{status},
+            #{createdUser}, #{createdTime}, #{modifiedUser}, #{modifiedTime}
+        )
+    </insert>
+
     <insert id="insertOrderItem" parameterType="com.wyc21.entity.OrderItem">
         INSERT INTO wz_order_items (
-            order_item_id, order_id, product_id, product_name,
-            quantity, price, created_user, created_time
+            order_item_id, order_id, product_id,
+            product_name, quantity, price,
+            created_user, created_time
         ) VALUES (
-            #{orderItemId}, #{orderId}, #{productId}, #{productName},
-            #{quantity}, #{price}, #{createdUser}, NOW()
+            #{orderItemId}, #{orderId}, #{productId},
+            #{productName}, #{quantity}, #{price},
+            #{createdUser}, #{createdTime}
         )
+    </insert>
+
+    <insert id="batchInsertOrderItems" parameterType="java.util.List">
+        INSERT INTO wz_order_items (
+            order_item_id, order_id, product_id,
+            product_name, quantity, price,
+            created_user, created_time
+        ) VALUES 
+        <foreach collection="list" item="item" separator=",">
+            (
+                #{item.orderItemId}, #{item.orderId}, #{item.productId},
+                #{item.productName}, #{item.quantity}, #{item.price},
+                #{item.createdUser}, #{item.createdTime}
+            )
+        </foreach>
     </insert>
 
     <select id="findOrderItems" resultMap="OrderItemMap">

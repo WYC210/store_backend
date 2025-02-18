@@ -37,8 +37,11 @@ import com.wyc21.util.JsonResult; // 导入 JsonResult 类
 import java.util.ArrayList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
+import lombok.Data;
 
 @Service
+@Slf4j
 public class CartServiceImpl implements ICartService {
 
     private static final Logger log = LoggerFactory.getLogger(CartServiceImpl.class);
@@ -64,30 +67,19 @@ public class CartServiceImpl implements ICartService {
     private static final long ORDER_EXPIRE_MINUTES = 30;
 
     @Override
-    public List<CartItem> getCartItems(Long userId) {
-        // 检查用户是否存在
-        User user = userMapper.findByUid(userId);
-        if (user == null) {
-            throw new UserNotFoundException("用户不存在");
-        }
-
-        // 获取购物车项
-        List<CartItem> items = cartMapper.findCartItems(userId);
-
-        return items != null ? items : new ArrayList<>();
+    public List<CartItem> getCartItems(String userId) {
+        return cartMapper.findCartItems(userId);
     }
 
     @Override
-    public CartItem getCartItem(Long userId, String cartItemId) {
-        Cart cart = cartMapper.findByUserId(userId);
-        if (cart == null) {
+    public CartItem getCartItem(String userId, String cartItemId) {
+        Cart userCart = cartMapper.findByUserId(userId);
+        if (userCart == null) {
             throw new CartNotFoundException("购物车不存在");
         }
-        // CartItem item = cartMapper.findCartItemById(String.valueOf(cartItemId));
-        // if (item == null || !item.getCartId().equals(cart.getCartId())) {
 
         CartItem item = cartMapper.findCartItemById(cartItemId);
-        if (item == null || !item.getCartId().equals(String.valueOf(cart.getCartId()))) {
+        if (item == null || !item.getCartId().equals(userCart.getCartId())) {
             throw new CartNotFoundException("购物车商品不存在");
         }
         return item;
@@ -95,11 +87,11 @@ public class CartServiceImpl implements ICartService {
 
     @Override
     @Transactional
-    public CartItem updateQuantity(Long userId, String cartItemId, Integer quantity) {
+    public CartItem updateQuantity(String userId, String cartItemId, Integer quantity) {
         CartItem item = getCartItem(userId, cartItemId);
 
         // 检查库存
-        Product product = productMapper.findById(Long.parseLong(item.getProductId()));
+        Product product = productMapper.findById(item.getProductId());
         if (product.getStock() < quantity) {
             throw new ProductNotFoundException("商品库存不足");
         }
@@ -111,26 +103,23 @@ public class CartServiceImpl implements ICartService {
 
     @Override
     @Transactional
-    public void deleteCartItem(Long userId, String cartItemId) {
+    public void deleteCartItem(String userId, String cartItemId) {
         CartItem item = cartMapper.findCartItemById(cartItemId);
-
         if (item == null) {
             throw new CartNotFoundException("购物车商品不存在");
         }
 
-        // 验证购物车项是否属于当前用户
         Cart cart = cartMapper.findByUserId(userId);
-        if (cart == null || !item.getCartId().equals(String.valueOf(cart.getCartId()))) {
+        if (cart == null || !item.getCartId().equals(cart.getCartId())) {
             throw new CartNotFoundException("无权操作此购物车商品");
         }
 
-        // 验证通过，执行删除
-        cartMapper.deleteCartItem(cartItemId);
+        cartMapper.deleteCartItem(userId, cartItemId);
     }
 
     @Override
     @Transactional
-    public void clearCart(Long userId) {
+    public void clearCart(String userId) {
         Cart cart = cartMapper.findByUserId(userId);
         if (cart != null) {
             cartMapper.deleteAllCartItems(cart.getCartId());
@@ -138,7 +127,7 @@ public class CartServiceImpl implements ICartService {
     }
 
     @Override
-    public BigDecimal getCartTotal(Long userId) {
+    public BigDecimal getCartTotal(String userId) {
         List<CartItem> items = getCartItems(userId);
         return items.stream()
                 .map(item -> item.getPrice().multiply(new BigDecimal(item.getQuantity())))
@@ -147,69 +136,177 @@ public class CartServiceImpl implements ICartService {
 
     @Override
     @Transactional
-    public CartItem addToCartWithCheck(Long userId, String productId, Integer quantity) {
+    public CartItem addToCartWithCheck(String userId, String productId, Integer quantity) {
         // 检查用户是否存在
         User user = userMapper.findByUid(userId);
         if (user == null) {
             throw new UserNotFoundException("用户不存在");
         }
 
-        // 检查商品是否存在
-        Product product = productMapper.findById(Long.parseLong(productId));
+        // 获取或创建购物车
+        Cart userCart = cartMapper.findByUserId(userId);
+        if (userCart == null) {
+            userCart = new Cart();
+            userCart.setCartId(idGenerator.nextId().toString());
+            userCart.setUserId(userId);
+            userCart.setCreatedUser("system");
+            userCart.setCreatedTime(LocalDateTime.now());
+            cartMapper.insertCart(userCart);
+        }
+
+        // 检查商品是否已在购物车中
+        CartItem existingItem = cartMapper.findCartItemByProductId(userCart.getCartId(), productId);
+        if (existingItem != null) {
+            // 更新数量
+            existingItem.setQuantity(existingItem.getQuantity() + quantity);
+            cartMapper.updateCartItem(existingItem);
+            return existingItem;
+        }
+
+        // 检查商品是否存在并验证库存
+        Product product = productMapper.findById(productId);
         if (product == null) {
             throw new ProductNotFoundException("商品不存在");
         }
-
-        // 检查库存
         if (product.getStock() < quantity) {
-            throw new ProductNotFoundException("商品库存不足");
+            throw new InsuffientStockException("商品库存不足");
         }
 
-        // 检查购物车是否存在
-        Cart cart = cartMapper.findByUserId(userId);
-        if (cart == null) {
-            // 如果购物车不存在，创建新的购物车
-            cart = new Cart();
-            cart.setCartId(idGenerator.nextId());
-            cart.setUserId(userId);
-            cart.setCreatedUser("system");
-            cartMapper.insert(cart);
-        } else {
-            // 检查购物车中的商品状态
-            List<CartItem> existingItems = cartMapper.findCartItemsWithStatus(userId);
-            boolean hasUnpaidItems = existingItems.stream()
-                    .anyMatch(item -> {
-                        String orderStatus = item.getOrderStatus();
-                        return orderStatus == null ||
-                                orderStatus.equals("PENDING_PAY") ||
-                                orderStatus.equals("CREATED");
-                    });
+        // 创建新的购物车项
+        CartItem cartItem = new CartItem();
+        cartItem.setCartItemId(idGenerator.nextId().toString());
+        cartItem.setCartId(userCart.getCartId());
+        cartItem.setProductId(productId);
+        cartItem.setQuantity(quantity);
+        cartItem.setPrice(product.getPrice());
+        cartItem.setProductName(product.getName());
+        cartItem.setCreatedUser("system");
+        cartItem.setCreatedTime(LocalDateTime.now());
+        cartMapper.insertCartItem(cartItem);
 
-            if (hasUnpaidItems) {
-                // 如果购物车中有待支付或创建状态的商品，直接添加商品
-                CartItem existingItem = cartMapper.findCartItem(cart.getCartId(), Long.parseLong(productId));
-                if (existingItem != null) {
-                    // 更新数量
-                    existingItem.setQuantity(quantity);
-                    cartMapper.updateCartItem(existingItem);
-                    return existingItem;
-                }
+        return cartItem;
+    }
+
+    @Override
+    @Transactional
+    public List<CartItem> batchAddToCart(String userId, List<ICartService.CartItemRequest> items) {
+        // 检查用户是否存在
+        User user = userMapper.findByUid(userId);
+        if (user == null) {
+            throw new UserNotFoundException("用户不存在");
+        }
+
+        // 获取或创建购物车
+        Cart userCart = cartMapper.findByUserId(userId);
+        if (userCart == null) {
+            userCart = new Cart();
+            userCart.setCartId(idGenerator.nextId().toString());
+            userCart.setUserId(userId);
+            userCart.setCreatedUser("system");
+            userCart.setCreatedTime(LocalDateTime.now());
+            cartMapper.insertCart(userCart);
+        }
+
+        List<CartItem> newCartItems = new ArrayList<>();
+
+        for (ICartService.CartItemRequest itemRequest : items) {
+            // 检查商品是否存在并验证库存
+            Product product = productMapper.findById(itemRequest.getProductId());
+            if (product == null) {
+                throw new ProductNotFoundException("商品不存在: " + itemRequest.getProductId());
+            }
+            if (product.getStock() < itemRequest.getQuantity()) {
+                throw new InsuffientStockException("商品库存不足: " + product.getName());
+            }
+
+            // 检查商品是否已在购物车中
+            CartItem existingItem = cartMapper.findCartItemByProductId(userCart.getCartId(),
+                    itemRequest.getProductId());
+            if (existingItem != null) {
+                // 更新数量
+                existingItem.setQuantity(existingItem.getQuantity() + itemRequest.getQuantity());
+                cartMapper.updateCartItem(existingItem);
+                newCartItems.add(existingItem);
             } else {
-                // 如果购物车中的商品全部已支付或被删除，清空购物车
-                cartMapper.deleteAllCartItems(cart.getCartId());
+                // 创建新的购物车项
+                CartItem cartItem = new CartItem();
+                cartItem.setCartItemId(idGenerator.nextId().toString());
+                cartItem.setCartId(userCart.getCartId());
+                cartItem.setProductId(itemRequest.getProductId());
+                cartItem.setQuantity(itemRequest.getQuantity());
+                cartItem.setPrice(product.getPrice());
+                cartItem.setProductName(product.getName());
+                cartItem.setCreatedUser("system");
+                cartItem.setCreatedTime(LocalDateTime.now());
+                newCartItems.add(cartItem);
             }
         }
 
-        // 添加新商品
+        // 批量插入新的购物车项
+        if (!newCartItems.isEmpty()) {
+            cartMapper.batchInsertCartItems(newCartItems);
+        }
+
+        return newCartItems;
+    }
+
+    private CartItem validateCartItem(String userId, String cartItemId) {
+        CartItem item = cartMapper.findCartItemById(cartItemId);
+        Cart userCart = cartMapper.findByUserId(userId);
+        if (item == null || userCart == null) {
+            throw new CartNotFoundException("购物车商品不存在");
+        }
+        return item;
+    }
+
+    private void validateCartItemOwnership(String userId, CartItem item) {
+        List<CartItem> userCartItems = cartMapper.findCartItemsByUserId(userId);
+        if (userCartItems.isEmpty()) {
+            throw new CartNotFoundException("无权操作此购物车商品");
+        }
+    }
+
+    private boolean checkExistingItems(List<CartItem> existingItems) {
+        return existingItems.stream()
+                .anyMatch(item -> {
+                    String orderStatus = item.getOrderStatus();
+                    return orderStatus == null ||
+                            orderStatus.equals("PENDING_PAY") ||
+                            orderStatus.equals("CREATED");
+                });
+    }
+
+    private CartItem createNewCartItem(String userId, Integer quantity, Product product) {
         CartItem newItem = new CartItem();
         newItem.setCartItemId(String.valueOf(idGenerator.nextId()));
-        newItem.setCartId(String.valueOf(cart.getCartId()));
-        newItem.setProductId(String.valueOf(Long.parseLong(productId)));
+        newItem.setCartId(String.valueOf(userId));
+        newItem.setProductId(String.valueOf(product.getProductId()));
         newItem.setQuantity(quantity);
         newItem.setPrice(product.getPrice());
         newItem.setProductName(product.getName());
-        newItem.setCreatedUser("system");
-        cartMapper.insertCartItem(newItem);
+        newItem.setImageUrl(product.getImageUrl());
+        newItem.setOrderStatus("CREATED");
         return newItem;
+    }
+
+    @Override
+    public List<CartItem> getCartItemsByIds(String userId, List<String> cartItemIds) {
+        // 验证用户
+        User user = userMapper.findByUid(userId);
+        if (user == null) {
+            throw new UserNotFoundException("用户不存在");
+        }
+
+        return cartMapper.findByIds(userId, cartItemIds);
+    }
+
+    private void validateProduct(String productId, Integer quantity) {
+        Product product = productMapper.findById(productId);
+        if (product == null) {
+            throw new ProductNotFoundException("商品不存在");
+        }
+        if (product.getStock() < quantity) {
+            throw new InsuffientStockException("商品库存不足");
+        }
     }
 }

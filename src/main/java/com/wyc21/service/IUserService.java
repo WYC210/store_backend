@@ -30,7 +30,7 @@ public interface IUserService {
      * @param uid 用户id
      * @return 用户信息
      */
-    User getUserById(Long uid);
+    User getUserById(String uid);
 
     /**
      * 更新用户信息
@@ -47,5 +47,5 @@ public interface IUserService {
      * @param oldPassword 旧密码
      * @param newPassword 新密码
      */
-    void updatePassword(Long uid, String oldPassword, String newPassword);
+    void updatePassword(String uid, String oldPassword, String newPassword);
 }

@@ -15,7 +15,11 @@ import java.util.Map;
 import java.util.HashMap;
 import java.math.BigDecimal;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
+import java.util.Collections;
+import lombok.Data;
 
+@Slf4j
 @RestController
 @RequestMapping("/orders")
 public class OrderController extends BaseController {
@@ -30,7 +34,8 @@ public class OrderController extends BaseController {
 
     @PostMapping("/create")
     public JsonResult<Order> createOrder(@RequestBody Map<String, Object> request, HttpServletRequest httpRequest) {
-        Long userId = (Long) httpRequest.getAttribute("uid");
+        String userId = httpRequest.getAttribute("uid").toString();
+        log.info("用户ID: {}, 创建订单请求: {}", userId, request);
         // 获取购物车中的商品
         List<CartItem> cartItems = cartService.getCartItems(userId);
         if (cartItems.isEmpty()) {
@@ -39,24 +44,25 @@ public class OrderController extends BaseController {
         // 获取前端传来的选中商品列表
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> selectedItems = (List<Map<String, Object>>) request.get("items");
-        
+
         if (selectedItems == null || selectedItems.isEmpty()) {
             return new JsonResult<>(400, null, "请选择要购买的商品");
         }
 
         // 将选中的商品转换为CartItem对象
         List<CartItem> itemsToPurchase = selectedItems.stream()
-            .map(item -> {
-                CartItem cartItem = new CartItem();
-                cartItem.setProductId(String.valueOf(item.get("productId")));
-                cartItem.setQuantity(Integer.parseInt(item.get("quantity").toString()));
-                cartItem.setPrice(new BigDecimal(item.get("price").toString()));
-                cartItem.setProductName((String) item.get("productName"));
-                return cartItem;
-            })
-            .collect(Collectors.toList());
+                .map(item -> {
+                    CartItem cartItem = new CartItem();
+                    cartItem.setProductId(String.valueOf(item.get("productId")));
+                    cartItem.setQuantity(Integer.parseInt(item.get("quantity").toString()));
+                    cartItem.setPrice(new BigDecimal(item.get("price").toString()));
+                    cartItem.setProductName((String) item.get("productName"));
+                    return cartItem;
+                })
+                .collect(Collectors.toList());
 
         Order createdOrder = orderService.createOrder(userId, itemsToPurchase);
+        log.info("订单创建成功: {}", createdOrder);
         return new JsonResult<>(OK, createdOrder, "订单创建成功");
     }
 
@@ -64,17 +70,38 @@ public class OrderController extends BaseController {
     public JsonResult<Order> createOrderDirect(
             @RequestBody Map<String, Object> request,
             HttpServletRequest httpRequest) {
-        Long userId = (Long) httpRequest.getAttribute("uid");
-        Long productId = Long.parseLong(request.get("productId").toString());
-        Integer quantity = Integer.parseInt(request.get("quantity").toString());
+        log.info("收到直接购买请求223333: {}", request);
+        try {
+            String userId = httpRequest.getAttribute("uid").toString();
 
-        Order createdOrder = orderService.createOrderDirect(userId, productId, quantity);
-        return new JsonResult<>(OK, createdOrder, "订单创建成功");
+            // 从请求中获取商品信息
+            @SuppressWarnings("unchecked")
+            Map<String, Object> item = (Map<String, Object>) request.get("items");
+
+            if (item == null) {
+                log.error("商品信息不能为空");
+                return new JsonResult<>(400, null, "商品信息不能为空");
+            }
+
+            String productId = item.get("productId").toString();
+            Integer quantity = Integer.parseInt(item.get("quantity").toString());
+
+            log.info("用户ID: {}, 商品ID: {}, 数量: {}", userId, productId, quantity);
+
+            // 创建订单
+            Order createdOrder = orderService.createOrderDirect(userId, productId, quantity);
+
+            // 返回创建的订单信息
+            return new JsonResult<>(OK, createdOrder, "订单创建成功");
+        } catch (Exception e) {
+            log.error("创建订单失败", e);
+            return new JsonResult<>(500, null, "创建订单失败：" + e.getMessage());
+        }
     }
 
     @GetMapping
     public JsonResult<List<Order>> getOrders(HttpServletRequest request) {
-        Long userId = (Long) request.getAttribute("uid");
+        String userId = request.getAttribute("uid").toString();
         List<Order> orders = orderService.getOrdersByUserId(userId);
         return new JsonResult<>(OK, orders);
     }
@@ -88,15 +115,32 @@ public class OrderController extends BaseController {
     @PostMapping("/{orderId}/pay")
     public JsonResult<Boolean> payOrder(
             @PathVariable String orderId,
-            @RequestBody Map<String, String> paymentInfo) {
-        String paymentId = paymentInfo.get("paymentId");
-        boolean success = orderService.payOrder(orderId, paymentId);
-        return new JsonResult<>(OK, success, success ? "支付成功" : "支付失败");
+            @RequestBody Map<String, String> paymentInfo,
+            HttpServletRequest request) {
+        try {
+            String userId = request.getAttribute("uid").toString();
+            if (userId == null) {
+                return new JsonResult<>(403, false, "未授权的访问");
+            }
+
+            // 验证订单所属权
+            Order order = orderService.getOrder(orderId);
+            if (order == null || !order.getUserId().equals(userId)) {
+                return new JsonResult<>(403, false, "无权访问此订单");
+            }
+
+            String paymentId = paymentInfo.get("paymentId");
+            boolean success = orderService.payOrder(orderId, paymentId);
+            return new JsonResult<>(OK, success, success ? "支付成功" : "支付失败");
+        } catch (Exception e) {
+            log.error("支付订单时发生错误: ", e);
+            return new JsonResult<>(500, false, "支付失败：" + e.getMessage());
+        }
     }
 
     @PostMapping("/{orderId}/cancel")
     public JsonResult<Void> cancelOrder(@PathVariable String orderId, HttpServletRequest request) {
-        Long userId = (Long) request.getAttribute("uid");
+        String userId = request.getAttribute("uid").toString();
         orderService.cancelOrder(orderId, userId);
         return new JsonResult<>(OK, null, "订单取消成功");
     }
@@ -113,14 +157,15 @@ public class OrderController extends BaseController {
     }
 
     @PostMapping("/purchase")
-    public JsonResult<Map<String, Object>> purchaseProduct(@RequestBody Map<String, Object> request, HttpServletRequest httpRequest) {
-        Long userId = (Long) httpRequest.getAttribute("uid");
-        
+    public JsonResult<Map<String, Object>> purchaseProduct(@RequestBody Map<String, Object> request,
+            HttpServletRequest httpRequest) {
+        String userId = httpRequest.getAttribute("uid").toString();
+
         log.info("接收到购买请求: {}", request);
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> selectedItems = (List<Map<String, Object>>) request.get("items");
-        
+
         if (selectedItems == null || selectedItems.isEmpty()) {
             log.warn("没有选择商品: request = {}", request);
             return new JsonResult<>(400, null, "请选择要购买的商品");
@@ -128,15 +173,15 @@ public class OrderController extends BaseController {
 
         try {
             List<CartItem> itemsToPurchase = selectedItems.stream()
-                .map(item -> {
-                    CartItem cartItem = new CartItem();
-                    cartItem.setProductId(String.valueOf(item.get("productId")));
-                    cartItem.setQuantity(Integer.parseInt(item.get("quantity").toString()));
-                    cartItem.setPrice(new BigDecimal(String.valueOf(item.get("price"))));
-                    cartItem.setProductName((String) item.get("productName"));
-                    return cartItem;
-                })
-                .collect(Collectors.toList());
+                    .map(item -> {
+                        CartItem cartItem = new CartItem();
+                        cartItem.setProductId(String.valueOf(item.get("productId")));
+                        cartItem.setQuantity(Integer.parseInt(item.get("quantity").toString()));
+                        cartItem.setPrice(new BigDecimal(String.valueOf(item.get("price"))));
+                        cartItem.setProductName((String) item.get("productName"));
+                        return cartItem;
+                    })
+                    .collect(Collectors.toList());
 
             log.info("转换后的购物项: {}", itemsToPurchase);
             return orderService.purchaseProduct(userId, itemsToPurchase);
@@ -144,5 +189,29 @@ public class OrderController extends BaseController {
             log.error("购买商品时发生错误: ", e);
             return new JsonResult<>(500, null, "购买失败：" + e.getMessage());
         }
+    }
+
+    /**
+     * 购物车商品结算
+     */
+    @PostMapping("/purchase/cart")
+    public JsonResult<Order> purchaseFromCart(@RequestBody CartPurchaseRequest request,
+            HttpServletRequest httpRequest) {
+        String userId = httpRequest.getAttribute("uid").toString();
+        log.info("===== 购物车结算请求开始 =====");
+        log.info("用户ID: {}", userId);
+
+        try {
+            Order order = orderService.createOrderFromCart(userId, request.getCartItemIds());
+            return new JsonResult<>(OK, order, "订单创建成功");
+        } catch (Exception e) {
+            log.error("创建订单失败: ", e);
+            return new JsonResult<>(500, null, "创建订单失败：" + e.getMessage());
+        }
+    }
+
+    @Data
+    public static class CartPurchaseRequest {
+        private List<String> cartItemIds;
     }
 }

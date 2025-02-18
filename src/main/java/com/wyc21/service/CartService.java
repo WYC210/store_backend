@@ -20,9 +20,9 @@ public interface CartService {
     void clearCart(Long userId);
 
     // 检查商品是否在购物车中
-    boolean isProductInCart(Long userId, Long productId);
+    boolean isProductInCart(String userId, Long productId);
 
     // 添加并检查购物车
-    void addToCartWithCheck(Long userId, Long productId, Integer quantity);
+    void addToCartWithCheck(String userId, Long productId, Integer quantity);
 
 }

@@ -74,7 +74,7 @@ public class UserController extends BaseController {
 
     @PostMapping("/logout")
     public JsonResult<Void> logout(HttpServletRequest request, HttpServletResponse response) {
-        Long uid = (Long) request.getAttribute("uid");
+        String uid = request.getAttribute("uid").toString(); // 改为String类型
         if (uid != null) {
             // 从Redis中删除token
             redisUtil.deleteToken("token:" + uid);
@@ -88,12 +88,10 @@ public class UserController extends BaseController {
     @GetMapping("/info")
     public JsonResult<User> getUserInfo(HttpServletRequest request) {
         try {
-            Long uid = (Long) request.getAttribute("uid");
-            if (uid == null) {
-                return new JsonResult<>(401, null, "未获取到用户ID");
-            }
+            // 从 request 中获取 uid 并转换为 String
+            String uid = request.getAttribute("uid").toString();
 
-            // 获取完整的用户信息
+            // 获取用户信息
             User user = userService.getUserById(uid);
 
             // 创建一个新的用户对象，只包含需要返回给前端的信息
@@ -118,12 +116,7 @@ public class UserController extends BaseController {
     @PatchMapping("/update")
     public JsonResult<User> updateUserInfo(@RequestBody User user, HttpServletRequest request) {
         try {
-            Long uid = (Long) request.getAttribute("uid");
-            if (uid == null) {
-                return new JsonResult<>(401, null, "未获取到用户ID");
-            }
-
-            // 设置用户ID
+            String uid = request.getAttribute("uid").toString();
             user.setUid(uid);
 
             // 调用service层更新用户信息
@@ -151,11 +144,7 @@ public class UserController extends BaseController {
     @PatchMapping("/password")
     public JsonResult<Void> updatePassword(@RequestBody Map<String, String> params, HttpServletRequest request) {
         try {
-            Long uid = (Long) request.getAttribute("uid");
-            if (uid == null) {
-                return new JsonResult<>(401, null, "未获取到用户ID");
-            }
-
+            String uid = request.getAttribute("uid").toString();
             String oldPassword = params.get("oldPassword");
             String newPassword = params.get("newPassword");
 

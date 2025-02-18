@@ -24,7 +24,7 @@ spring:
 
 server:
   port: 8088
-  address: 0.0.0.0  # 允许从所有网络接口访问
+  address: 0.0.0.0 # 允许从所有网络接口访问
 
 # 安全配置
 app:
@@ -44,4 +44,6 @@ mybatis:
   mapper-locations: classpath:mapper/*.xml
 
 jwt:
-  secret: your_jwt_secret_key_here_it_should_be_at_least_32_characters_long
+  secret: 7zV2kLp9xRqYfE5tHwCnJ8sKmNbQ4jXrGvD3yAhUcF6W
+  accessTokenExpiration: 900 # 15分钟
+  refreshTokenExpiration: 604800 # 7天

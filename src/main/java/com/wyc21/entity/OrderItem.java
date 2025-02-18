@@ -6,9 +6,9 @@ import java.time.LocalDateTime;
 
 @Data
 public class OrderItem {
-    private Long orderItemId;
+    private String orderItemId;
     private String orderId;
-    private Long productId;
+    private String productId;
     private String productName;
     private Integer quantity;
     private BigDecimal price;
@@ -16,4 +16,4 @@ public class OrderItem {
     private LocalDateTime createdTime;
     private String modifiedUser;
     private LocalDateTime modifiedTime;
-} 
+}

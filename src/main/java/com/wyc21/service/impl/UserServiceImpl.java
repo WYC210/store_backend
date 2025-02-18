@@ -21,6 +21,7 @@ import com.wyc21.util.SnowflakeIdGenerator;
 import com.wyc21.mapper.IdGeneratorMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class UserServiceImpl implements IUserService {
@@ -54,8 +55,9 @@ public class UserServiceImpl implements IUserService {
             throw new UsernameDuplicatedException("用户名已被注册");
         }
 
-        // 生成用户ID (这里需要实现一个生成唯一ID的方法)
-        user.setUid(generateUniqueId());
+        // 生成用户ID
+        String uid = String.valueOf(snowflakeIdGenerator.nextId()); // 转换为String
+        user.setUid(uid);
 
         // 密码加密
         user.setPassword(PasswordUtils.hashPassword(user.getPassword()));
@@ -78,25 +80,6 @@ public class UserServiceImpl implements IUserService {
         if (rows != 1) {
             throw new InsertException("注册时发生未知错误");
         }
-    }
-
-    // 生成唯一ID的方法
-    private Long generateUniqueId() {
-        // 使用雪花算法生成ID
-        Long id = snowflakeIdGenerator.nextId();
-
-        // 记录到ID生成器表
-        try {
-            idGeneratorMapper.initIdGenerator("user", id);
-        } catch (Exception e) {
-            // 如果记录已存在，更新最大ID
-            Long currentMaxId = idGeneratorMapper.getCurrentMaxId("user");
-            if (currentMaxId != null && id > currentMaxId) {
-                idGeneratorMapper.updateMaxId("user", id, 1);
-            }
-        }
-
-        return id;
     }
 
     @Override
@@ -123,7 +106,11 @@ public class UserServiceImpl implements IUserService {
         String ipLocation = ipUtil.getIpLocation(ip);
 
         // 生成token
-        String token = jwtUtil.generateAccessToken(result.getUid(), result.getUsername(), ip, ipLocation);
+        String token = jwtUtil.generateAccessToken(
+                result.getUid(), // 现在是String类型
+                result.getUsername(),
+                ip,
+                ipLocation);
 
         // 存储到Redis，设置5分钟过期
         String redisKey = "token:" + result.getUid();
@@ -150,38 +137,26 @@ public class UserServiceImpl implements IUserService {
     }
 
     @Override
-    public User getUserById(Long uid) {
+    public User getUserById(String uid) {
         User result = userMapper.findByUid(uid);
         if (result == null || result.getIsDelete() == 1) {
             throw new UserNotFoundException("用户不存在");
         }
-
-        // 创建新的User对象，返回完整的用户信息（除了密码）
-        User user = new User();
-        user.setUid(result.getUid());
-        user.setUsername(result.getUsername());
-        user.setPower(result.getPower());
-        user.setPhone(result.getPhone());
-        user.setEmail(result.getEmail());
-        user.setGender(result.getGender());
-        user.setAvatar(result.getAvatar());
-        user.setCreatedTime(result.getCreatedTime());
-        user.setModifiedTime(result.getModifiedTime());
-
-        return user;
+        return result;
     }
 
     @Override
+    @Transactional
     public User updateUserInfo(User user) {
         // 获取原用户信息
-        User result = userMapper.findByUid(user.getUid());
+        User result = userMapper.findByUid(user.getUid()); // user.getUid()现在返回String
         if (result == null || result.getIsDelete() == 1) {
             throw new UserNotFoundException("用户不存在");
         }
 
         // 更新用户信息
         User updateUser = new User();
-        updateUser.setUid(user.getUid());
+        updateUser.setUid(user.getUid()); // 现在是String类型
         updateUser.setPhone(user.getPhone());
         updateUser.setEmail(user.getEmail());
         updateUser.setGender(user.getGender());
@@ -196,13 +171,13 @@ public class UserServiceImpl implements IUserService {
         }
 
         // 获取更新后的用户信息
-        return userMapper.findByUid(user.getUid());
+        return userMapper.findByUid(user.getUid()); // 现在是String类型
     }
 
     @Override
-    public void updatePassword(Long uid, String oldPassword, String newPassword) {
+    public void updatePassword(String uid, String oldPassword, String newPassword) {
         // 获取用户信息
-        User result = userMapper.findByUid(uid);
+        User result = userMapper.findByUid(uid); // 现在是String类型
         if (result == null || result.getIsDelete() == 1) {
             throw new UserNotFoundException("用户不存在");
         }
@@ -217,7 +192,7 @@ public class UserServiceImpl implements IUserService {
 
         // 创建更新对象
         User updateUser = new User();
-        updateUser.setUid(uid);
+        updateUser.setUid(uid); // 现在是String类型
         updateUser.setPassword(hashedPassword);
         updateUser.setModifiedUser(result.getUsername());
         updateUser.setModifiedTime(LocalDateTime.now());

@@ -5,8 +5,8 @@ import java.time.LocalDateTime;
 import lombok.Data;
 
 @Data
-public class User implements Serializable {
-    private Long uid;
+public class User extends BaseEntity implements Serializable {
+    private String uid;
     private String username;
     private String password;
     private String power; // 用户权限

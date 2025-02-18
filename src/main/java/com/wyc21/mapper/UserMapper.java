@@ -27,7 +27,7 @@ public interface UserMapper {
      * @param uid 用户id
      * @return 用户数据
      */
-    User findByUid(Long uid);
+    User findByUid(String uid);
 
     /**
      * 更新用户信息

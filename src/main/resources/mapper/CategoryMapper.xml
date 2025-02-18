@@ -2,12 +2,16 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.wyc21.mapper.CategoryMapper">
     
-    <resultMap id="CategoryMap" type="com.wyc21.entity.Category">
+    <resultMap id="CategoryEntityMap" type="com.wyc21.entity.Category">
         <id property="categoryId" column="category_id"/>
         <result property="name" column="name"/>
-        <result property="parentCategoryId" column="parent_id"/>
-        <collection property="children" ofType="com.wyc21.entity.Category" 
-                    column="category_id" select="findChildCategories"/>
+        <result property="parentId" column="parent_id"/>
+        <result property="level" column="level"/>
+        <result property="sortOrder" column="sort_order"/>
+        <result property="isActive" column="is_active"/>
+        <result property="createdUser" column="created_user"/>
+        <result property="createdTime" column="created_time"/>
+        <result property="modifiedTime" column="modify_time"/>
     </resultMap>
     
     <insert id="insert" parameterType="com.wyc21.entity.Category">
@@ -15,26 +19,30 @@
             category_id, name, parent_id,
             created_time, modified_time
         ) VALUES (
-            #{categoryId}, #{name}, #{parentCategoryId},
+            #{categoryId}, #{name}, #{parentId},
             NOW(), NOW()
         )
     </insert>
     
-    <select id="findById" resultMap="CategoryMap">
-        SELECT * FROM wz_categories WHERE category_id = #{categoryId}
+    <select id="findById" resultMap="CategoryEntityMap">
+        SELECT * FROM wz_categories 
+        WHERE category_id = #{categoryId}
+        AND is_active = 1
     </select>
     
-    <select id="findAll" resultMap="CategoryMap">
-        SELECT * FROM wz_categories ORDER BY created_time DESC
+    <select id="findAll" resultMap="CategoryEntityMap">
+        SELECT * FROM wz_categories 
+        WHERE is_active = 1
+        ORDER BY level ASC, sort_order ASC
     </select>
     
-    <select id="findRootCategories" resultMap="CategoryMap">
+    <select id="findRootCategories" resultMap="CategoryEntityMap">
         SELECT * FROM wz_categories 
         WHERE parent_id IS NULL 
         ORDER BY created_time DESC
     </select>
     
-    <select id="findChildCategories" resultMap="CategoryMap">
+    <select id="findChildCategories" resultMap="CategoryEntityMap">
         SELECT * FROM wz_categories 
         WHERE parent_id = #{parentId}
         ORDER BY created_time DESC
@@ -43,7 +51,7 @@
     <update id="update" parameterType="com.wyc21.entity.Category">
         UPDATE wz_categories
         SET name = #{name},
-            parent_id = #{parentCategoryId},
+            parent_id = #{parentId},
             modified_time = NOW()
         WHERE category_id = #{categoryId}
     </update>

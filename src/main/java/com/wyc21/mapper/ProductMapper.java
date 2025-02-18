@@ -26,7 +26,7 @@ public interface ProductMapper {
                         @Param("imageUrl") String imageUrl);
 
         // 获取商品详情（包括图片）
-        Product findById(Long productId);
+        Product findById(String id);
 
         // 获取商品评论
         List<ProductReview> findReviewsByProductId(@Param("productId") Long productId,
@@ -44,12 +44,12 @@ public interface ProductMapper {
         /**
          * 扣减库存
          */
-        int decreaseStock(@Param("productId") Long productId, @Param("quantity") Integer quantity);
+        void decreaseStock(@Param("productId") String productId, @Param("quantity") Integer quantity);
 
         /**
          * 恢复库存
          */
-        int increaseStock(@Param("productId") Long productId, @Param("quantity") Integer quantity);
+        void increaseStock(@Param("productId") String productId, @Param("quantity") Integer quantity);
 
         /**
          * 锁定商品

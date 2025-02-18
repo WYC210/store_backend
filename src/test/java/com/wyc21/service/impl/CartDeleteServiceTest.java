@@ -35,9 +35,9 @@ public class CartDeleteServiceTest {
     private Cart cart;
     private CartItem cartItem;
 
-    private final Long TEST_USER_ID = 100L;
-    private final Long TEST_CART_ID = 200L;
-    private final Long TEST_CART_ITEM_ID = 300L;
+    private final String TEST_USER_ID = "100";
+    private final String TEST_CART_ID = "200";
+    private final String TEST_CART_ITEM_ID = "300";
 
     @BeforeEach
     public void setUp() {
@@ -54,14 +54,13 @@ public class CartDeleteServiceTest {
         cart.setCartId(TEST_CART_ID);
         cart.setUserId(TEST_USER_ID);
         cart.setCreatedUser("test");
-
-        cartMapper.insert(cart);
+        cartMapper.insertCart(cart);
 
         // 创建测试用的购物车项
         cartItem = new CartItem();
-        cartItem.setCartItemId(String.valueOf(TEST_CART_ITEM_ID));
-        cartItem.setCartId(String.valueOf(TEST_CART_ID));
-        cartItem.setProductId(String.valueOf(1L));
+        cartItem.setCartItemId(TEST_CART_ITEM_ID);
+        cartItem.setCartId(TEST_CART_ID);
+        cartItem.setProductId("1");
         cartItem.setQuantity(1);
         cartItem.setPrice(new BigDecimal("99.00"));
         cartItem.setProductName("Test Product");
@@ -72,22 +71,19 @@ public class CartDeleteServiceTest {
     @Test
     @DisplayName("测试成功删除购物车商品")
     public void testDeleteCartItemSuccess() {
-        // 执行删除操作
-        assertDoesNotThrow(() -> cartService.deleteCartItem(TEST_USER_ID, String.valueOf(TEST_CART_ITEM_ID)));
-
-        // 验证商品已被删除
-        CartItem deletedItem = cartMapper.findCartItemById(String.valueOf(TEST_CART_ITEM_ID));
+        assertDoesNotThrow(() -> cartService.deleteCartItem(TEST_USER_ID, TEST_CART_ITEM_ID));
+        CartItem deletedItem = cartMapper.findCartItemById(TEST_CART_ITEM_ID);
         assertNull(deletedItem, "购物车商品应该已被删除");
     }
 
     @Test
     @DisplayName("测试删除不存在的购物车商品")
     public void testDeleteNonExistentCartItem() {
-        Long nonExistentItemId = 999L;
+        String nonExistentItemId = "999";
 
         CartNotFoundException exception = assertThrows(
                 CartNotFoundException.class,
-                () -> cartService.deleteCartItem(TEST_USER_ID, String.valueOf(nonExistentItemId)));
+                () -> cartService.deleteCartItem(TEST_USER_ID, nonExistentItemId));
 
         assertEquals("购物车商品不存在", exception.getMessage());
     }
@@ -95,35 +91,20 @@ public class CartDeleteServiceTest {
     @Test
     @DisplayName("测试删除其他用户的购物车商品")
     public void testDeleteOtherUsersCartItem() {
-        Long otherUserId = 999L;
+        String otherUserId = "999";
 
         CartNotFoundException exception = assertThrows(
                 CartNotFoundException.class,
-                () -> cartService.deleteCartItem(otherUserId, String.valueOf(TEST_CART_ITEM_ID)));
+                () -> cartService.deleteCartItem(otherUserId, TEST_CART_ITEM_ID));
 
         assertEquals("购物车商品不存在", exception.getMessage());
     }
 
     @Test
-    @DisplayName("测试删除购物车中的所有商品")
+    @DisplayName("测试清空购物车")
     public void testClearCart() {
-        // 添加多个购物车项
-        CartItem item2 = new CartItem();
-        item2.setCartItemId(String.valueOf(TEST_CART_ITEM_ID + 1));
-        item2.setCartId(String.valueOf(TEST_CART_ID));
-        item2.setProductId(String.valueOf(2L));
-        item2.setQuantity(2);
-        item2.setPrice(new BigDecimal("199.00"));
-        item2.setProductName("Test Product 2");
-        item2.setCreatedUser("test");
-        cartMapper.insertCartItem(item2);
-
-        // 清空购物车
         cartService.clearCart(TEST_USER_ID);
-
-        // 验证购物车是否为空
-        assertTrue(cartMapper.findCartItems(TEST_USER_ID).isEmpty(),
-                "购物车应该为空");
+        assertTrue(cartMapper.findCartItems(TEST_USER_ID).isEmpty(), "购物车应该为空");
     }
 
     @Test

@@ -6,9 +6,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
-public class Order {
+public class Order extends BaseEntity {
     private String orderId; // 订单号
-    private Long userId; // 用户ID
+    private String userId; // 用户ID
     private BigDecimal totalAmount; // 订单金额
     private OrderStatus status; // 订单状态
     private LocalDateTime createdTime; // 创建时间

@@ -50,6 +50,26 @@
         <result property="modifiedTime" column="modified_time"/>
     </resultMap>
 
+    <resultMap id="ProductEntityMap" type="com.wyc21.entity.Product">
+        <id property="productId" column="product_id" javaType="java.lang.String"/>
+        <result property="categoryId" column="category_id" javaType="java.lang.String"/>
+        <result property="name" column="name"/>
+        <result property="description" column="description"/>
+        <result property="price" column="price"/>
+        <result property="stock" column="stock"/>
+        <result property="sku" column="sku"/>
+        <result property="brand" column="brand"/>
+        <result property="tags" column="tags"/>
+        <result property="rating" column="rating"/>
+        <result property="reviewCount" column="review_count"/>
+        <result property="lowStockThreshold" column="low_stock_threshold"/>
+        <result property="isActive" column="is_active"/>
+        <result property="imageUrl" column="image_url"/>
+        <result property="createdUser" column="created_user"/>
+        <result property="createdTime" column="created_time"/>
+        <result property="modifiedTime" column="modified_time"/>
+    </resultMap>
+
     <select id="findProducts" resultType="com.wyc21.entity.Product">
         SELECT p.*
         FROM wz_products p
@@ -86,11 +106,9 @@
         </if>
     </select>
 
-    <select id="findById" resultMap="ProductDetailMap">
-        SELECT p.*, pi.image_url
-        FROM wz_products p
-        LEFT JOIN wz_product_images pi ON p.product_id = pi.product_id AND pi.is_primary = 1
-        WHERE p.product_id = #{productId}
+    <select id="findById" resultMap="ProductEntityMap">
+        SELECT * FROM wz_products 
+        WHERE product_id = #{productId}
     </select>
 
     <select id="findReviewsByProductId" resultType="com.wyc21.entity.ProductReview">

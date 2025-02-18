@@ -6,10 +6,14 @@ import java.time.LocalDateTime;
 
 @Data
 public class Category extends BaseEntity {
-    private Long categoryId; // 分类ID
-    private String name; // 分类名称
-    private Long parentCategoryId; // 父类别ID
-    private List<Category> children; // 子分类列表
-    private LocalDateTime createdTime; // 创建时间
-    private LocalDateTime modifiedTime; // 修改时间
+    private String categoryId; // 确保是String类型
+    private String name;
+    private String parentId; // 确保是String类型
+    private Integer level;
+    private Integer sortOrder;
+    private Boolean isActive;
+    private List<Category> children; // 用于构建树形结构
+    private String createdUser;
+    private LocalDateTime createdTime;
+    private LocalDateTime modifiedTime; // 改为 modifiedTime 以匹配数据库字段
 }

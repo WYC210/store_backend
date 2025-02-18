@@ -13,35 +13,36 @@ import java.util.List;
 @Service
 @Slf4j
 public class ProductServiceImpl implements ProductService {
-    
+
     @Autowired
     private ProductMapper productMapper;
-    
+
     @Override
-    public PageResult<Product> getProducts(Long categoryId, String keyword, int pageNum, int pageSize,String imageUrl) {
+    public PageResult<Product> getProducts(Long categoryId, String keyword, int pageNum, int pageSize,
+            String imageUrl) {
         // 验证并修正分页参数
-        pageNum = Math.max(1, pageNum);  // 页码最小为1
-        pageSize = Math.max(1, pageSize);  // 每页大小最小为1
-        
+        pageNum = Math.max(1, pageNum); // 页码最小为1
+        pageSize = Math.max(1, pageSize); // 每页大小最小为1
+
         // 计算偏移量
         int offset = (pageNum - 1) * pageSize;
-        
+
         // 查询数据
-        List<Product> products = productMapper.findProducts(categoryId, keyword, offset, pageSize,imageUrl);
-        long total = productMapper.countProducts(categoryId, keyword,imageUrl);
-        
+        List<Product> products = productMapper.findProducts(categoryId, keyword, offset, pageSize, imageUrl);
+        long total = productMapper.countProducts(categoryId, keyword, imageUrl);
+
         // 返回分页结果
         return new PageResult<>(products, total, pageNum, pageSize);
     }
-    
+
     @Override
-    public Product getProduct(Long productId) {
+    public Product getProduct(String productId) {
         return productMapper.findById(productId);
     }
-    
+
     @Override
     public List<ProductReview> getProductReviews(Long productId, int limit) {
         // 调用 mapper 获取评论列表
         return productMapper.findReviewsByProductId(productId, limit);
     }
-} 
+}

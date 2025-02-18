@@ -37,9 +37,13 @@ import com.wyc21.service.ex.AccessDeniedException;
 import java.util.Map;
 import java.util.HashMap;
 import com.wyc21.util.JsonResult;
+import com.wyc21.service.ICartService;
+import com.wyc21.service.ex.CartNotFoundException;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
+@Transactional(rollbackFor = Exception.class)
 public class OrderServiceImpl implements IOrderService {
 
     @Autowired
@@ -59,32 +63,122 @@ public class OrderServiceImpl implements IOrderService {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    private ICartService cartService;
+
     // 订单过期时间
     private static final long ORDER_EXPIRE_MINUTES = 30;
 
-    // 添加新方法：直接购买单个商品
     @Override
     @Transactional
-    public Order createOrderDirect(Long userId, Long productId, Integer quantity) {
-        // 创建一个临时的 CartItem 来复用现有逻辑
+    public Order createOrderDirect(String userId, String productId, Integer quantity) {
+        // 获取商品信息
         Product product = productMapper.findById(productId);
         if (product == null) {
             throw new ProductNotFoundException("商品不存在");
         }
 
-        CartItem item = new CartItem();
-        item.setProductId(String.valueOf(productId));
-        item.setQuantity(quantity);
-        item.setPrice(product.getPrice());
-        item.setProductName(product.getName());
+        // 计算总金额
+        BigDecimal totalAmount = product.getPrice().multiply(new BigDecimal(quantity));
 
-        List<CartItem> items = Collections.singletonList(item);
-        return createOrder(userId, items);
+        // 创建订单对象
+        Order order = new Order();
+        order.setOrderId(idGenerator.nextId().toString());
+        order.setUserId(userId);
+        order.setTotalAmount(totalAmount); // 确保这里设置了总金额
+        order.setStatus(OrderStatus.PENDING_PAY);
+        order.setCreatedTime(LocalDateTime.now());
+        order.setExpireTime(LocalDateTime.now().plusMinutes(30)); // 设置过期时间
+        order.setVersion(1);
+        order.setCreatedUser(userId);
+      
+        order.setModifiedTime(LocalDateTime.now());
+       
+        // 插入订单到数据库
+        orderMapper.insert(order);
+        return order;
     }
 
     @Override
     @Transactional
-    public Order createOrder(Long userId, List<CartItem> items) {
+    public Order createOrderFromCart(String userId, List<String> cartItemIds) {
+        // 验证用户
+        User user = userMapper.findByUid(userId);
+        if (user == null) {
+            throw new UserNotFoundException("用户不存在");
+        }
+
+        // 获取购物车商品
+        List<CartItem> cartItems = cartService.getCartItemsByIds(userId, cartItemIds);
+        if (cartItems.isEmpty()) {
+            throw new CartNotFoundException("未找到选中的商品");
+        }
+
+        // 创建订单
+        Order order = createOrderFromItems(userId, cartItems);
+
+        // 从购物车中删除已购买的商品
+        for (String cartItemId : cartItemIds) {
+            cartService.deleteCartItem(userId, cartItemId);
+        }
+
+        return order;
+    }
+
+    private Product validateProduct(String productId, Integer quantity) {
+        Product product = productMapper.findById(productId);
+        if (product == null) {
+            throw new ProductNotFoundException("商品不存在");
+        }
+        if (product.getStock() < quantity) {
+            throw new InsuffientStockException("商品库存不足");
+        }
+        return product;
+    }
+
+    private Order createOrder(String userId) {
+        Order order = new Order();
+        order.setOrderId(idGenerator.nextId().toString());
+        order.setUserId(userId);
+        order.setStatus(OrderStatus.PENDING_PAY);
+        order.setCreatedTime(LocalDateTime.now());
+        order.setExpireTime(LocalDateTime.now().plusMinutes(ORDER_EXPIRE_MINUTES));
+        return order;
+    }
+
+    private OrderItem createOrderItem(String orderId, Product product, Integer quantity) {
+        OrderItem orderItem = new OrderItem();
+        orderItem.setOrderItemId(idGenerator.nextId().toString());
+        orderItem.setOrderId(orderId);
+        orderItem.setProductId(String.valueOf(product.getProductId()));
+        orderItem.setProductName(product.getName());
+        orderItem.setQuantity(quantity);
+        orderItem.setPrice(product.getPrice());
+        orderItem.setCreatedTime(LocalDateTime.now());
+        return orderItem;
+    }
+
+    private void saveOrder(Order order, OrderItem orderItem) {
+        orderMapper.insert(order);
+        orderMapper.insertOrderItem(orderItem);
+    }
+
+    private void saveOrder(Order order, List<OrderItem> orderItems) {
+        orderMapper.insert(order);
+        orderMapper.batchInsertOrderItems(orderItems);
+    }
+
+    private void processCartItems(List<CartItem> cartItems) {
+        for (CartItem item : cartItems) {
+            decreaseStock(item.getProductId(), item.getQuantity());
+            cartService.deleteCartItem(item.getCartId(), item.getCartItemId());
+        }
+    }
+
+    @Override
+    @Transactional
+    public Order createOrder(String userId, List<CartItem> items) {
         // 1. 验证用户
         User user = userMapper.findByUid(userId);
         if (user == null) {
@@ -93,7 +187,7 @@ public class OrderServiceImpl implements IOrderService {
 
         // 2. 验证商品库存
         for (CartItem item : items) {
-            Product product = productMapper.findById(Long.parseLong(item.getProductId()));
+            Product product = productMapper.findById(item.getProductId());
             if (product == null) {
                 throw new ProductNotFoundException("商品不存在：" + item.getProductId());
             }
@@ -102,20 +196,20 @@ public class OrderServiceImpl implements IOrderService {
             }
 
             // 使用前端传来的价格，但需要验证价格是否正确
-            log.info("验证商品价格: 商品ID = {}, 数据库价格 = {}, 前端价格 = {}", 
-                     item.getProductId(), product.getPrice(), item.getPrice());
-            
+            log.info("验证商品价格: 商品ID = {}, 数据库价格 = {}, 前端价格 = {}",
+                    item.getProductId(), product.getPrice(), item.getPrice());
+
             if (!product.getPrice().equals(item.getPrice())) {
-                log.error("商品价格不一致: 商品ID = {}, 数据库价格 = {}, 前端价格 = {}", 
-                          item.getProductId(), product.getPrice(), item.getPrice());
+                log.error("商品价格不一致: 商品ID = {}, 数据库价格 = {}, 前端价格 = {}",
+                        item.getProductId(), product.getPrice(), item.getPrice());
                 throw new ProductNotFoundException("商品价格有变化，请刷新后重试");
             }
         }
 
         // 3. 计算订单总金额（只计算选中的商品）
         BigDecimal totalAmount = items.stream()
-            .map(item -> item.getPrice().multiply(new BigDecimal(item.getQuantity())))
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
+                .map(item -> item.getPrice().multiply(new BigDecimal(item.getQuantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         // 4. 创建订单
         Order order = new Order();
@@ -137,19 +231,21 @@ public class OrderServiceImpl implements IOrderService {
         // 6. 保存订单商品并扣减库存
         for (CartItem item : items) {
             OrderItem orderItem = new OrderItem();
-            orderItem.setOrderItemId(idGenerator.nextId());
+            orderItem.setOrderItemId(idGenerator.nextId().toString());
             orderItem.setOrderId(order.getOrderId());
-            orderItem.setProductId(Long.parseLong(item.getProductId()));
+            orderItem.setProductId(item.getProductId());
             orderItem.setProductName(item.getProductName());
             orderItem.setQuantity(item.getQuantity());
             orderItem.setPrice(item.getPrice());
             orderItem.setCreatedUser(user.getUsername());
             orderItem.setModifiedTime(LocalDateTime.now());
             orderItem.setModifiedUser(user.getUsername());
+            orderItem.setCreatedTime(LocalDateTime.now());
+            orderItem.setModifiedTime(LocalDateTime.now());
             orderMapper.insertOrderItem(orderItem);
 
             // 扣减库存
-            productMapper.decreaseStock(Long.parseLong(item.getProductId()), item.getQuantity());
+            productMapper.decreaseStock(item.getProductId(), item.getQuantity());
         }
 
         // 7. 更新订单状态为待支付
@@ -284,14 +380,7 @@ public class OrderServiceImpl implements IOrderService {
 
     @Override
     @Transactional
-    public void cancelOrder(String orderId) {
-        // 保留旧方法的实现，但标记为过时
-        cancelOrder(orderId, null);
-    }
-
-    @Override
-    @Transactional
-    public void cancelOrder(String orderId, Long userId) {
+    public void cancelOrder(String orderId, String userId) {
         // 1. 查询订单并检查
         Order order = orderMapper.findById(orderId);
         if (order == null || Boolean.TRUE.equals(order.getIsDelete())) {
@@ -306,7 +395,7 @@ public class OrderServiceImpl implements IOrderService {
         // 3. 检查订单状态
         OrderStatus status = order.getStatus();
 
-        // 4. 软删除订单（设置 is_delete = 1）
+        // 4. 软删除订单
         orderMapper.softDeleteOrder(orderId, "system");
 
         // 5. 只有创建状态或待支付状态的订单需要恢复库存
@@ -360,7 +449,7 @@ public class OrderServiceImpl implements IOrderService {
     }
 
     @Override
-    public List<Order> getOrdersByUserId(Long userId) {
+    public List<Order> getOrdersByUserId(String userId) {
         // 获取用户的所有订单
         List<Order> orders = orderMapper.findByUserId(userId);
 
@@ -389,86 +478,117 @@ public class OrderServiceImpl implements IOrderService {
 
     @Override
     @Transactional
-    public JsonResult<Map<String, Object>> purchaseProduct(Long userId, List<CartItem> items) {
-        // 1. 检查用户是否存在
-        User user = userMapper.findByUid(userId);
-        if (user == null) {
-            throw new UserNotFoundException("用户不存在");
+    public JsonResult<Map<String, Object>> purchaseProduct(String userId, List<CartItem> items) {
+        try {
+            // 创建订单
+            Order order = createOrder(userId, items);
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("orderId", order.getOrderId());
+            result.put("totalAmount", order.getTotalAmount());
+            result.put("status", order.getStatus());
+
+            return new JsonResult<>(200, result, "订单创建成功");
+        } catch (Exception e) {
+            log.error("购买商品失败: ", e);
+            return new JsonResult<>(500, null, "购买失败：" + e.getMessage());
         }
+    }
 
-        // 2. 验证商品库存和价格
-        for (CartItem item : items) {
-            Product product = productMapper.findById(Long.parseLong(item.getProductId()));
-            if (product == null) {
-                throw new ProductNotFoundException("商品不存在：" + item.getProductId());
-            }
-            if (product.getStock() < item.getQuantity()) {
-                throw new InsuffientStockException("商品库存不足：" + product.getName());
-            }
-            // 验证价格
-            if (!product.getPrice().equals(item.getPrice())) {
-                throw new ProductNotFoundException("商品价格有变化，请刷新后重试");
-            }
-        }
-
-        // 3. 计算订单总金额
-        BigDecimal totalAmount = items.stream()
-            .map(item -> item.getPrice().multiply(new BigDecimal(item.getQuantity())))
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        // 4. 创建订单
+    private Order createOrderFromItems(String userId, List<CartItem> items) {
+        // 创建订单
         Order order = new Order();
-        String orderId = generateOrderId();
+        String orderId = String.valueOf(idGenerator.nextId());
         order.setOrderId(orderId);
         order.setUserId(userId);
-        order.setTotalAmount(totalAmount);
-        order.setStatus(OrderStatus.CREATED);
-        order.setCreatedTime(LocalDateTime.now());
-        order.setExpireTime(LocalDateTime.now().plusMinutes(30));
-        order.setVersion(1);
-        order.setCreatedUser(user.getUsername());
-        order.setModifiedTime(LocalDateTime.now());
-        order.setModifiedUser(user.getUsername());
+        order.setStatus(OrderStatus.PENDING_PAY); // 直接设置枚举值
 
-        // 5. 保存订单
+        // 计算总金额
+        BigDecimal totalAmount = items.stream()
+                .map(item -> item.getPrice().multiply(new BigDecimal(item.getQuantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        order.setTotalAmount(totalAmount);
+
+        // 设置创建时间和创建用户
+        LocalDateTime now = LocalDateTime.now();
+        order.setCreatedTime(now);
+        order.setModifiedTime(now);
+        String username = userMapper.findByUid(userId).getUsername();
+        order.setCreatedUser(username);
+        order.setModifiedUser(username);
+
+        // 保存订单
         orderMapper.insert(order);
 
-        // 6. 保存订单商品并扣减库存
+        // 创建订单项
         for (CartItem item : items) {
             OrderItem orderItem = new OrderItem();
-            orderItem.setOrderItemId(idGenerator.nextId());
-            orderItem.setOrderId(order.getOrderId());
-            orderItem.setProductId(Long.parseLong(item.getProductId()));
-            orderItem.setProductName(item.getProductName());
+            orderItem.setOrderItemId(idGenerator.nextId().toString());
+            orderItem.setOrderId(orderId);
+            orderItem.setProductId(item.getProductId());
             orderItem.setQuantity(item.getQuantity());
             orderItem.setPrice(item.getPrice());
-            orderItem.setCreatedUser(user.getUsername());
-            orderItem.setModifiedTime(LocalDateTime.now());
-            orderItem.setModifiedUser(user.getUsername());
+            orderItem.setProductName(item.getProductName());
+            orderItem.setCreatedUser(username);
+            orderItem.setCreatedTime(now);
+            orderItem.setModifiedUser(username);
+            orderItem.setModifiedTime(now);
+
             orderMapper.insertOrderItem(orderItem);
 
             // 扣减库存
-            productMapper.decreaseStock(Long.parseLong(item.getProductId()), item.getQuantity());
+            productMapper.decreaseStock(item.getProductId(), item.getQuantity());
         }
 
-        // 7. 更新订单状态为待支付
-        order.setStatus(OrderStatus.PENDING_PAY);
-        Map<String, Object> params = new HashMap<>();
-        params.put("orderId", orderId);
-        params.put("status", OrderStatus.PENDING_PAY.name());
-        params.put("modifiedUser", user.getUsername());
-        orderMapper.updateOrderStatus(params);
-
-        // 8. 设置Redis过期时间
-        String orderKey = "order:" + order.getOrderId();
+        // 设置订单过期时间
+        String orderKey = "order:" + orderId;
         redisTemplate.opsForValue().set(orderKey, OrderStatus.PENDING_PAY.name(),
                 ORDER_EXPIRE_MINUTES, TimeUnit.MINUTES);
 
-        // 9. 返回购买的商品信息
-        Map<String, Object> responseData = new HashMap<>();
-        responseData.put("orderId", orderId);
-        responseData.put("totalAmount", order.getTotalAmount());
+        return order;
+    }
 
-        return new JsonResult<>(200, responseData, "购买成功");
+    private void decreaseStock(String productId, Integer quantity) {
+        productMapper.decreaseStock(productId, quantity);
+    }
+
+    private void validateCartItems(List<CartItem> cartItems) {
+        for (CartItem item : cartItems) {
+            Product product = productMapper.findById(item.getProductId());
+            if (product == null) {
+                throw new ProductNotFoundException("商品不存在: " + item.getProductId());
+            }
+            if (product.getStock() < item.getQuantity()) {
+                throw new InsuffientStockException("商品库存不足: " + product.getName());
+            }
+        }
+    }
+
+    private List<OrderItem> createOrderItemsFromCart(String orderId, List<CartItem> cartItems) {
+        return cartItems.stream().map(item -> {
+            OrderItem orderItem = new OrderItem();
+            orderItem.setOrderItemId(idGenerator.nextId().toString());
+            orderItem.setOrderId(orderId);
+            orderItem.setProductId(item.getProductId());
+            orderItem.setProductName(item.getProductName());
+            orderItem.setQuantity(item.getQuantity());
+            orderItem.setPrice(item.getPrice());
+            orderItem.setCreatedTime(LocalDateTime.now());
+            orderItem.setCreatedUser("system");
+            return orderItem;
+        }).collect(Collectors.toList());
+    }
+
+    private OrderItem createOrderItem(String orderId, CartItem item) {
+        OrderItem orderItem = new OrderItem();
+        orderItem.setOrderItemId(idGenerator.nextId().toString());
+        orderItem.setOrderId(orderId);
+        orderItem.setProductId(item.getProductId());
+        orderItem.setProductName(item.getProductName());
+        orderItem.setQuantity(item.getQuantity());
+        orderItem.setPrice(item.getPrice());
+        orderItem.setCreatedTime(LocalDateTime.now());
+        return orderItem;
     }
 }

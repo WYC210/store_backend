@@ -48,7 +48,7 @@ public class ProductController extends BaseController {
     @GetMapping("/{id}")
     public JsonResult<Map<String, Object>> getProduct(@PathVariable Long id) {
         // 获取商品基本信息
-        Product product = productService.getProduct(id);
+        Product product = productService.getProduct(String.valueOf(id));
         // 获取商品所有图片
         List<String> images = productMapper.findProductImages(id);
 

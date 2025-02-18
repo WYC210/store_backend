@@ -1,26 +1,26 @@
 package com.wyc21.service;
 
 import com.wyc21.entity.Order;
-import com.wyc21.entity.CartItem;
 import java.util.List;
 import java.util.Map;
+import com.wyc21.entity.CartItem;
 import com.wyc21.util.JsonResult;
 
 public interface IOrderService {
     /**
-     * 创建订单
+     * 直接购买创建订单
      */
-    Order createOrder(Long userId, List<CartItem> items);
+    Order createOrderDirect(String userId, String productId, Integer quantity);
 
     /**
-     * 新增方法：直接购买
+     * 从购物车创建订单
      */
-    Order createOrderDirect(Long userId, Long productId, Integer quantity);
+    Order createOrderFromCart(String userId, List<String> cartItemIds);
 
     /**
      * 获取用户的所有订单
      */
-    List<Order> getOrdersByUserId(Long userId);
+    List<Order> getOrdersByUserId(String userId);
 
     /**
      * 获取订单详情
@@ -34,20 +34,8 @@ public interface IOrderService {
 
     /**
      * 取消订单
-     * 
-     * @param orderId 订单ID
-     * @deprecated 使用 {@link #cancelOrder(String, Long)} 代替
      */
-    @Deprecated
-    void cancelOrder(String orderId);
-
-    /**
-     * 取消订单
-     * 
-     * @param orderId 订单ID
-     * @param userId  用户ID
-     */
-    void cancelOrder(String orderId, Long userId);
+    void cancelOrder(String orderId, String userId);
 
     /**
      * 检查并处理过期订单
@@ -60,11 +48,13 @@ public interface IOrderService {
     void updateOrderStatus(String orderId, String status, String modifiedUser);
 
     /**
-     * 购买商品
-     * 
-     * @param userId 用户ID
-     * @param items  购买的商品列表
-     * @return 购买结果
+     * 创建订单
      */
-    JsonResult<Map<String, Object>> purchaseProduct(Long userId, List<CartItem> items);
+    Order createOrder(String userId, List<CartItem> items);
+
+    /**
+     * 购买商品
+     */
+    JsonResult<Map<String, Object>> purchaseProduct(String userId, List<CartItem> items);
+
 }

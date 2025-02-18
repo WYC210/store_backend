@@ -10,7 +10,7 @@
 
     <!-- 配置User实体类中属性与数据库表中字段之间的映射关系-->
     <resultMap id="UserEntityMap" type="com.wyc21.entity.User">
-        <id property="uid" column="uid" javaType="java.lang.Long"/>
+        <id property="uid" column="uid" javaType="java.lang.String"/>
         <result property="username" column="username"/>
         <result property="password" column="password"/>
         <result property="power" column="power"/>
@@ -47,11 +47,9 @@
 
     <!-- 根据用户id查询用户数据 -->
     <select id="findByUid" resultType="com.wyc21.entity.User">
-        SELECT 
-            uid, username, power, phone, email, gender, avatar, is_delete,
-            created_user, created_time, modified_user, modified_time
-        FROM wz_users 
-        WHERE uid = #{uid}
+        SELECT * FROM wz_users 
+        WHERE uid = #{uid} 
+        AND is_delete = 0
     </select>
 
     <!-- 更新用户信息 -->

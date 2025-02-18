@@ -1,14 +1,13 @@
 package com.wyc21.entity;
 
 import lombok.Data;
-import java.util.Date;
+import java.time.LocalDateTime;
 
 @Data
-public class Cart {
-    private Long cartId;
-    private Long userId;
+public class Cart extends BaseEntity {
+    private String cartId;
+    private String userId;
+    private Integer isCheckedOut;
     private String createdUser;
-    private Date createdTime;
-    private Date modifiedTime;
-    private Boolean isCheckedOut = false;
+    private LocalDateTime createdTime;
 }

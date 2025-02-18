@@ -3,9 +3,6 @@ USE store;
 -- 清空所有表数据（按照外键依赖的反序清空）
 SET FOREIGN_KEY_CHECKS = 0;
 
-TRUNCATE TABLE wz_chat_messages_archive;
-TRUNCATE TABLE wz_chat_messages;
-TRUNCATE TABLE wz_chat_rooms;
 TRUNCATE TABLE wz_order_items;
 TRUNCATE TABLE wz_orders;
 TRUNCATE TABLE wz_cart_items;
@@ -22,87 +19,77 @@ SET FOREIGN_KEY_CHECKS = 1;
 
 -- 1. 初始化ID生成器
 INSERT INTO wz_id_generator (id_type, current_max_id, step, version) VALUES
-('user', 1000, 100, 1),
-('category', 1000, 100, 1),
-('product', 1000, 100, 1),
-('cart', 1000, 100, 1),
-('order', 1000, 100, 1);
+('user', 100, 100, 1),
+('category', 100, 100, 1),
+('product', 100, 100, 1),
+('cart', 100, 100, 1),
+('order', 100, 100, 1),
+('cart_item', 100, 100, 1),
+('order_item', 100, 100, 1);
 
 -- 2. 初始化用户数据
-INSERT INTO wz_users (uid, username, password, power, phone, email, gender, avatar, is_delete, created_user, created_time, modified_user, modified_time) VALUES
-(1, 'admin', 'e10adc3949ba59abbe56e057f20f883e', 'admin', '13800138000', 'admin@example.com', 1, '/images/avatar/default.png', 0, 'system', NOW(), 'system', NOW()),
-(2, 'test1', 'e10adc3949ba59abbe56e057f20f883e', 'user', '13800138001', 'test1@example.com', 1, '/images/avatar/default.png', 0, 'system', NOW(), 'system', NOW()),
-(3, 'test2', 'e10adc3949ba59abbe56e057f20f883e', 'user', '13800138002', 'test2@example.com', 0, '/images/avatar/default.png', 0, 'system', NOW(), 'system', NOW());
+INSERT INTO wz_users (uid, username, password, power, phone, email, gender, avatar, created_user, created_time) VALUES
+('1', 'admin', '$2a$10$N.ZOn9G6/YLFixAOPMg/h.z7pCu6v2XyFDtC4q.jeeGM/TEZhPy7i', 'admin', '13800138000', 'admin@example.com', 1, 'admin.jpg', 'system', NOW()),
+('2', 'test', '$2a$10$N.ZOn9G6/YLFixAOPMg/h.z7pCu6v2XyFDtC4q.jeeGM/TEZhPy7i', 'user', '13800138001', 'test@example.com', 0, 'default.jpg', 'system', NOW());
 
--- 3. 初始化分类数据
-INSERT INTO wz_categories (category_id, name, parent_id, level, sort_order, is_active, created_user, created_time, modify_time) VALUES
-(1, '电子产品', NULL, 1, 1, true, 'system', NOW(), NOW()),
-(2, '服装', NULL, 1, 2, true, 'system', NOW(), NOW()),
-(3, '图书', NULL, 1, 3, true, 'system', NOW(), NOW()),
-(11, '手机', 1, 2, 1, true, 'system', NOW(), NOW()),
-(12, '电脑', 1, 2, 2, true, 'system', NOW(), NOW()),
-(21, '男装', 2, 2, 1, true, 'system', NOW(), NOW()),
-(22, '女装', 2, 2, 2, true, 'system', NOW(), NOW()),
-(31, '小说', 3, 2, 1, true, 'system', NOW(), NOW()),
-(32, '教育', 3, 2, 2, true, 'system', NOW(), NOW());
+-- 3. 初始化分类数据（使用事务确保数据一致性）
+START TRANSACTION;
 
--- 4. 初始化商品数据（字段顺序已修正）
-INSERT INTO wz_products (product_id, category_id, name, description, price, stock, brand, tags, rating, review_count, image_url, is_active, created_user, created_time, modified_user, modified_time) VALUES
-(1, 11, 'iPhone 14', '苹果最新旗舰手机', 6999.00, 100, 'Apple', '手机,苹果,5G', 4.8, 120, '/images/iphone14.jpeg', 1, 'system', NOW(), 'system', NOW()),
-(2, 12, 'MacBook Pro', '专业级笔记本电脑', 12999.00, 50, 'Apple', '笔记本,苹果,电脑', 4.9, 80, '/images/macbookpro.jpeg', 1, 'system', NOW(), 'system', NOW()),
-(3, 21, '男士休闲夹克', '舒适百搭的夹克外套', 299.00, 200, 'Brand A', '外套,夹克,男装', 4.5, 50, '/images/jacket.jpeg', 1, 'system', NOW(), 'system', NOW()),
-(4, 22, '连衣裙', '优雅时尚连衣裙', 199.00, 150, 'Brand B', '裙子,女装,春装', 4.7, 65, '/images/dress.png', 1, 'system', NOW(), 'system', NOW()),
-(5, 31, '三体全集', '刘慈欣科幻小说', 99.00, 300, '重庆出版社', '科幻,小说,畅销书', 4.9, 200, '/images/santi.jpeg', 1, 'system', NOW(), 'system', NOW());
+-- 先插入父分类
+INSERT INTO wz_categories (category_id, name, parent_id, level, sort_order, created_user, created_time, modify_time) VALUES
+('1', '电子产品', NULL, 1, 1, 'system', NOW(), NOW()),
+('2', '服装', NULL, 1, 2, 'system', NOW(), NOW()),
+('3', '食品', NULL, 1, 3, 'system', NOW(), NOW());
+
+-- 然后插入子分类
+INSERT INTO wz_categories (category_id, name, parent_id, level, sort_order, created_user, created_time, modify_time) VALUES
+('11', '手机', '1', 2, 1, 'system', NOW(), NOW()),
+('12', '电脑', '1', 2, 2, 'system', NOW(), NOW()),
+('21', '男装', '2', 2, 1, 'system', NOW(), NOW()),
+('22', '女装', '2', 2, 2, 'system', NOW(), NOW());
+
+COMMIT;
+
+-- 4. 初始化商品数据
+INSERT INTO wz_products (product_id, name, description, price, stock, category_id, brand, tags, rating, review_count, image_url, is_active, created_user, created_time) VALUES
+('1', 'iPhone 14', '最新款iPhone手机', 6999.00, 100, '11', 'Apple', 'phone,apple', 4.5, 100, '/images/iphone14.jpeg', 1, 'system', NOW()),
+('2', 'MacBook Pro', '专业级笔记本电脑', 12999.00, 50, '12', 'Apple', 'laptop,apple', 4.8, 50, '/images/macbookpro.jpeg', 1, 'system', NOW()),
+('3', 'Huawei P50', '华为旗舰手机', 5999.00, 80, '11', 'Huawei', 'phone,huawei', 4.6, 80, '/images/huawei-p50.jpeg', 1, 'system', NOW());
 
 -- 5. 初始化商品图片数据
-INSERT INTO wz_product_images (image_id, product_id, image_url, is_primary) VALUES
-(1, 1, '/images/iphone14.jpeg', 1),
-(2, 1, '/images/iphone14.jpeg', 0),
-(3, 2, '/images/macbookpro.jpeg', 1),
-(4, 3, '/images/jacket.jpeg', 1),
-(5, 4, '/images/dress.png', 1);
+INSERT INTO wz_product_images (image_id, product_id, image_url, is_primary, created_user) VALUES
+('1', '1', '/images/iphone14.jpeg', 1, 'system'),
+('2', '1', '/images/iphone14.jpeg', 0, 'system'),
+('3', '2', '/images/macbook.jpeg', 1, 'system');
 
--- 6. 初始化浏览器指纹数据
-INSERT INTO wz_browser_fingerprints (fingerprint_id, first_seen_time, last_seen_time, user_id) VALUES
-('fp_001', NOW(), NOW(), 2),
-('fp_002', NOW(), NOW(), 3),
-('fp_003', NOW(), NOW(), NULL);
+-- 6. 初始化购物车数据
+INSERT INTO wz_carts (cart_id, user_id, created_user, created_time) VALUES
+('1', '1', 'system', NOW()),
+('2', '2', 'system', NOW());
 
--- 7. 初始化浏览历史数据
-INSERT INTO wz_browse_history (history_id, fingerprint_id, user_id, product_id, browse_time) VALUES
-(1, 'fp_001', 2, 1, NOW()),
-(2, 'fp_001', 2, 2, NOW()),
-(3, 'fp_002', 3, 3, NOW()),
-(4, 'fp_003', NULL, 4, NOW());
+-- 7. 初始化购物车项数据
+INSERT INTO wz_cart_items (cart_item_id, cart_id, product_id, quantity, price, product_name, created_user, created_time) VALUES
+('1', '1', '1', 1, 6999.00, 'iPhone 14', 'system', NOW()),
+('2', '1', '2', 1, 12999.00, 'MacBook Pro', 'system', NOW());
 
--- 8. 初始化购物车数据
-INSERT INTO wz_carts (cart_id, user_id, created_time, modified_time, is_checked_out) VALUES
-(1, 2, NOW(), NOW(), 0),
-(2, 3, NOW(), NOW(), 0);
+-- 8. 初始化订单数据
+INSERT INTO wz_orders (order_id, user_id, total_amount, status, payment_id, created_user, created_time) VALUES
+('1', '1', 19998.00, 'PAID', 'PAY123456', 'system', NOW()),
+('2', '2', 6999.00, 'PENDING_PAY', NULL, 'system', NOW());
 
--- 9. 初始化购物车商品数据
-INSERT INTO wz_cart_items (cart_item_id, cart_id, product_id, quantity, price, product_name, created_time, modified_time) VALUES
-(1, 1, 1, 1, 6999.00, 'iPhone 14', NOW(), NOW()),
-(2, 1, 3, 2, 299.00, '男士休闲夹克', NOW(), NOW()),
-(3, 2, 4, 1, 199.00, '连衣裙', NOW(), NOW());
-
--- 10. 初始化聊天室数据
-INSERT INTO wz_chat_rooms (room_id, product_id, created_time, modified_time) VALUES
-(1, 1, NOW(), NOW()),
-(2, 2, NOW(), NOW());
-
--- 11. 初始化聊天消息数据
-INSERT INTO wz_chat_messages (room_id, user_id, message, message_type, created_time) VALUES
-(1, 2, '这个手机什么时候发货？', 'user', NOW()),
-(1, 1, '您好，下单后24小时内发货', 'merchant', NOW()),
-(2, 3, '电脑有现货吗？', 'user', NOW()),
-(2, 1, '是的，现在有货', 'merchant', NOW());
-
--- 12. 初始化聊天消息归档数据
-INSERT INTO wz_chat_messages_archive (message_id, room_id, user_id, message, message_type, created_time, archived_time) VALUES
-(1, 1, 2, '上个月的咨询记录', 'user', DATE_SUB(NOW(), INTERVAL 1 MONTH), NOW()),
-(2, 1, 1, '已经回复过的历史消息', 'merchant', DATE_SUB(NOW(), INTERVAL 1 MONTH), NOW());
-
--- 13. 初始化订单数据（已补全）
-INSERT INTO wz_orders (order_id, user_id, total_amount, status, created_time, expire_time) VALUES
-(1, 2, 6999.00, 'pending', NOW(), NOW());
+-- 9. 初始化订单项数据
+INSERT INTO wz_order_items (
+    order_item_id, 
+    order_id, 
+    product_id, 
+    product_name, 
+    quantity, 
+    price, 
+    created_user, 
+    created_time,
+    modified_user,
+    modified_time
+) VALUES
+('1', '1', '1', 'iPhone 14', 1, 6999.00, 'system', NOW(), 'system', NOW()),
+('2', '1', '2', 'MacBook Pro', 1, 12999.00, 'system', NOW(), 'system', NOW()),
+('3', '2', '1', 'iPhone 14', 1, 6999.00, 'system', NOW(), 'system', NOW());

@@ -12,22 +12,22 @@ public interface CartMapper {
     /**
      * 根据用户ID查找购物车
      */
-    Cart findByUserId(Long userId);
+    Cart findByUserId(String userId);
 
     /**
      * 插入购物车
      */
-    void insert(Cart cart);
+    void insertCart(Cart cart);
 
     /**
      * 根据购物车ID和商品ID查找购物车项
      */
-    CartItem findCartItem(@Param("cartId") Long cartId, @Param("productId") Long productId);
+    CartItem findCartItem(@Param("userId") String userId, @Param("productId") String productId);
 
     /**
      * 根据购物车项ID查找购物车项
      */
-    CartItem findCartItemById(@Param("cartItemId") String cartItemId);
+    CartItem findCartItemById(String cartItemId);
 
     /**
      * 插入购物车项
@@ -42,20 +42,34 @@ public interface CartMapper {
     /**
      * 删除购物车项
      */
-    void deleteCartItem(@Param("cartItemId") String cartItemId);
+    void deleteCartItem(@Param("userId") String userId, @Param("cartItemId") String cartItemId);
 
     /**
      * 删除购物车所有商品
      */
-    void deleteAllCartItems(Long cartId);
+    void deleteAllCartItems(String userId);
 
     /**
      * 获取用户购物车所有商品
      */
-    List<CartItem> findCartItems(Long userId);
+    List<CartItem> findCartItems(String userId);
 
     /**
      * 查询购物车项及其订单状态
      */
-    List<CartItem> findCartItemsWithStatus(@Param("userId") Long userId);
+    List<CartItem> findCartItemsWithStatus(String userId);
+
+    List<CartItem> findByIds(@Param("userId") String userId, @Param("cartItemIds") List<String> cartItemIds);
+
+    CartItem findCartItemByProductId(String cartId, String productId);
+
+    /**
+     * 批量添加购物车项
+     */
+    void batchInsertCartItems(List<CartItem> cartItems);
+
+    /**
+     * 根据用户ID查找购物车项列表
+     */
+    List<CartItem> findCartItemsByUserId(String userId);
 }

@@ -3,55 +3,67 @@
     "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.wyc21.mapper.CartMapper">
     
-    <resultMap id="CartMap" type="com.wyc21.entity.Cart">
+    <resultMap id="CartEntityMap" type="com.wyc21.entity.Cart">
         <id property="cartId" column="cart_id"/>
         <result property="userId" column="user_id"/>
         <result property="createdTime" column="created_time"/>
-        <result property="modifiedTime" column="modified_time"/>
         <result property="isCheckedOut" column="is_checked_out"/>
     </resultMap>
     
-    <resultMap id="CartItemMap" type="com.wyc21.entity.CartItem">
-        <id property="cartItemId" column="cart_item_id" jdbcType="VARCHAR"/>
-        <result property="cartId" column="cart_id" jdbcType="VARCHAR"/>
-        <result property="productId" column="product_id" jdbcType="VARCHAR"/>
-        <result property="quantity" column="quantity" jdbcType="INTEGER"/>
-        <result property="price" column="price" jdbcType="DECIMAL"/>
-        <result property="productName" column="product_name" jdbcType="VARCHAR"/>
+    <resultMap id="CartItemEntityMap" type="com.wyc21.entity.CartItem">
+        <id property="cartItemId" column="cart_item_id"/>
+        <result property="cartId" column="cart_id"/>
+        <result property="productId" column="product_id"/>
+        <result property="quantity" column="quantity"/>
+        <result property="price" column="price"/>
+        <result property="productName" column="product_name"/>
         <result property="imageUrl" column="image_url"/>
-        <result property="createdUser" column="created_user" jdbcType="VARCHAR"/>
-        <result property="createdTime" column="created_time" jdbcType="TIMESTAMP"/>
-        <result property="modifiedTime" column="modified_time" jdbcType="TIMESTAMP"/>
     </resultMap>
 
-    <select id="findByUserId" resultMap="CartMap">
-        SELECT * FROM wz_carts WHERE user_id = #{userId}
+    <select id="findByUserId" resultMap="CartEntityMap">
+        SELECT * FROM wz_carts 
+        WHERE user_id = #{userId}
+        AND is_checked_out = 0
     </select>
-    
-    <insert id="insert" parameterType="com.wyc21.entity.Cart">
-        INSERT INTO wz_carts (cart_id, user_id, created_user, created_time)
-        VALUES (#{cartId}, #{userId}, #{createdUser}, NOW())
-    </insert>
-    
-    <select id="findCartItem" resultMap="CartItemMap">
-        SELECT * FROM wz_cart_items 
-        WHERE cart_id = #{cartId} AND product_id = #{productId}
+
+    <select id="findCartItems" resultMap="CartItemEntityMap">
+        SELECT ci.*, p.image_url
+        FROM wz_cart_items ci
+        JOIN wz_carts c ON ci.cart_id = c.cart_id
+        JOIN wz_products p ON ci.product_id = p.product_id
+        WHERE c.user_id = #{userId}
+        AND c.is_checked_out = 0
     </select>
-    
-    <select id="findCartItemById" resultMap="CartItemMap">
-        SELECT * FROM wz_cart_items 
-        WHERE cart_item_id = #{cartItemId,jdbcType=VARCHAR}
-    </select>
-    
-    <insert id="insertCartItem" parameterType="com.wyc21.entity.CartItem">
-        INSERT INTO wz_cart_items (
-            cart_item_id, cart_id, product_id, quantity, price, 
-            product_name, created_user, created_time
+
+    <insert id="insertCart" parameterType="com.wyc21.entity.Cart">
+        INSERT INTO wz_carts (
+            cart_id, user_id, created_user, created_time
         ) VALUES (
-            #{cartItemId}, #{cartId}, #{productId}, #{quantity}, #{price},
-            #{productName}, #{createdUser}, NOW()
+            #{cartId}, #{userId}, #{createdUser}, #{createdTime}
         )
     </insert>
+
+    <insert id="insertCartItem" parameterType="com.wyc21.entity.CartItem">
+        INSERT INTO wz_cart_items (
+            cart_item_id, cart_id, product_id,
+            quantity, price, product_name,
+            created_user, created_time
+        ) VALUES (
+            #{cartItemId}, #{cartId}, #{productId},
+            #{quantity}, #{price}, #{productName},
+            #{createdUser}, NOW()
+        )
+    </insert>
+
+    <select id="findCartItem" resultType="com.wyc21.entity.CartItem">
+        SELECT ci.* FROM wz_cart_items ci
+        JOIN wz_carts c ON ci.cart_id = c.cart_id
+        WHERE c.user_id = #{userId} AND ci.product_id = #{productId}
+    </select>
+    
+    <select id="findCartItemById" resultType="com.wyc21.entity.CartItem">
+        SELECT * FROM wz_cart_items WHERE cart_item_id = #{cartItemId}
+    </select>
     
     <update id="updateCartItem" parameterType="com.wyc21.entity.CartItem">
         UPDATE wz_cart_items 
@@ -63,33 +75,20 @@
     <delete id="deleteCartItem">
         DELETE FROM wz_cart_items 
         WHERE cart_item_id = #{cartItemId}
+        AND EXISTS (
+            SELECT 1 FROM wz_carts 
+            WHERE cart_id = wz_cart_items.cart_id 
+            AND user_id = #{userId}
+        )
     </delete>
     
     <delete id="deleteAllCartItems">
-        DELETE FROM wz_cart_items WHERE cart_id = #{cartId}
+        DELETE ci FROM wz_cart_items ci
+        JOIN wz_carts c ON ci.cart_id = c.cart_id
+        WHERE c.user_id = #{userId}
     </delete>
-    
-    <select id="findCartItems" resultMap="CartItemMap">
-        SELECT 
-            ci.*,
-            p.image_url,
-            o.status
-        FROM 
-            wz_cart_items ci
-        JOIN 
-            wz_carts c ON ci.cart_id = c.cart_id
-        JOIN 
-            wz_products p ON ci.product_id = p.product_id
-        LEFT JOIN 
-            wz_orders o ON o.user_id = c.user_id AND o.order_id = ci.cart_id
-        WHERE 
-            c.user_id = #{userId}
-            AND (o.status IS NULL OR o.status IN ('PENDING_PAY', 'CREATED'))
-        ORDER BY 
-            ci.created_time DESC
-    </select>
 
-    <select id="findCartItemsWithStatus" resultMap="CartItemMap">
+    <select id="findCartItemsWithStatus" resultMap="CartItemEntityMap">
         SELECT 
             ci.*,
             p.image_url,
@@ -104,5 +103,35 @@
             wz_orders o ON o.order_id = ci.cart_id
         WHERE 
             c.user_id = #{userId}
+    </select>
+
+    <select id="findCartItemByProductId" resultMap="CartItemEntityMap">
+        SELECT ci.* 
+        FROM wz_cart_items ci
+        WHERE ci.cart_id = #{cartId} 
+        AND ci.product_id = #{productId}
+    </select>
+
+    <insert id="batchInsertCartItems" parameterType="java.util.List">
+        INSERT INTO wz_cart_items (
+            cart_item_id, cart_id, product_id, quantity, price,
+            product_name, created_user, created_time
+        ) VALUES 
+        <foreach collection="list" item="item" separator=",">
+            (
+                #{item.cartItemId}, #{item.cartId}, #{item.productId},
+                #{item.quantity}, #{item.price}, #{item.productName},
+                #{item.createdUser}, NOW()
+            )
+        </foreach>
+    </insert>
+
+    <select id="findCartItemsByUserId" resultMap="CartItemEntityMap">
+        SELECT ci.*, p.image_url
+        FROM wz_cart_items ci
+        JOIN wz_carts c ON ci.cart_id = c.cart_id
+        JOIN wz_products p ON ci.product_id = p.product_id
+        WHERE c.user_id = #{userId}
+        AND c.is_checked_out = 0
     </select>
 </mapper> 

@@ -19,12 +19,12 @@ public interface OrderMapper {
     /**
      * 根据ID查询订单
      */
-    Order findById(@Param("orderId") String orderId);
+    Order findById(String orderId);
 
     /**
      * 根据用户ID查询订单
      */
-    List<Order> findByUserId(@Param("userId") Long userId);
+    List<Order> findByUserId(String userId);
 
     /**
      * 更新订单状态
@@ -80,4 +80,11 @@ public interface OrderMapper {
      * @return 删除的订单项数量
      */
     int deleteArchivedOrderItems();
+
+    /**
+     * 插入订单
+     */
+    void insertOrder(Order order);
+
+    void batchInsertOrderItems(List<OrderItem> orderItems);
 }

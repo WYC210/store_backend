@@ -37,11 +37,11 @@ public class CartServiceTests {
     public void testAddToCart() {
         log.info("开始测试添加商品到购物车");
 
-        Long userId = 2L;
-        Long productId = 1L; // iPhone 14
+        String userId = "2";
+        String productId = "1";
         Integer quantity = 1;
 
-        CartItem cartItem = cartService.addToCartWithCheck(userId, String.valueOf(productId), quantity);
+        CartItem cartItem = cartService.addToCartWithCheck(userId, productId, quantity);
 
         assertNotNull(cartItem, "购物车项不应为null");
         assertEquals(productId, cartItem.getProductId(), "商品ID应匹配");
@@ -56,12 +56,12 @@ public class CartServiceTests {
     public void testAddToCartWithInvalidUser() {
         log.info("开始测试无效用户添加购物车");
 
-        Long invalidUserId = 999L;
-        Long productId = 1L;
+        String invalidUserId = "99999";
+        String productId = "1";
         Integer quantity = 1;
 
         assertThrows(UserNotFoundException.class, () -> {
-            cartService.addToCartWithCheck(invalidUserId, String.valueOf(productId), quantity);
+            cartService.addToCartWithCheck(invalidUserId, productId, quantity);
         });
 
         log.info("无效用户测试完成");
@@ -71,12 +71,12 @@ public class CartServiceTests {
     public void testAddToCartWithInvalidProduct() {
         log.info("开始测试添加无效商品");
 
-        Long userId = 2L;
-        Long invalidProductId = 999L;
+        String userId = "2";
+        String invalidProductId = "99999";
         Integer quantity = 1;
 
         assertThrows(ProductNotFoundException.class, () -> {
-            cartService.addToCartWithCheck(userId, String.valueOf(invalidProductId), quantity); 
+            cartService.addToCartWithCheck(userId, invalidProductId, quantity);
         });
 
         log.info("无效商品测试完成");
@@ -86,7 +86,7 @@ public class CartServiceTests {
     public void testGetCartItems() {
         log.info("开始测试获取购物车商品列表");
 
-        Long userId = 2L;
+        String userId = "2";
         List<CartItem> items = cartService.getCartItems(userId);
 
         assertNotNull(items, "购物车列表不应为null");
@@ -107,11 +107,11 @@ public class CartServiceTests {
     public void testUpdateQuantity() {
         log.info("开始测试更新购物车商品数量");
 
-        Long userId = 2L;
-        Long cartItemId = 1L;
+        String userId = "2";
+        String cartItemId = "1";
         Integer newQuantity = 2;
 
-        CartItem updatedItem = cartService.updateQuantity(userId, String.valueOf(cartItemId), newQuantity);
+        CartItem updatedItem = cartService.updateQuantity(userId, cartItemId, newQuantity);
 
         assertNotNull(updatedItem, "更新后的购物车项不应为null");
         assertEquals(newQuantity, updatedItem.getQuantity(), "商品数量应该更新成功");
@@ -123,14 +123,14 @@ public class CartServiceTests {
     public void testDeleteCartItem() {
         log.info("开始测试删除购物车商品");
 
-        Long userId = 2L;
-        Long cartItemId = 1L;
+        String userId = "2";
+        String cartItemId = "1";
 
-        cartService.deleteCartItem(userId, String.valueOf(cartItemId));
+        cartService.deleteCartItem(userId, cartItemId);
 
         // 验证删除后无法找到该商品
         assertThrows(CartNotFoundException.class, () -> {
-            cartService.getCartItem(userId, String.valueOf(cartItemId));
+            cartService.getCartItem(userId, cartItemId);
         });
 
         log.info("删除购物车商品测试完成");
@@ -140,7 +140,7 @@ public class CartServiceTests {
     public void testClearCart() {
         log.info("开始测试清空购物车");
 
-        Long userId = 2L;
+        String userId = "2";
         cartService.clearCart(userId);
 
         List<CartItem> items = cartService.getCartItems(userId);
@@ -153,7 +153,7 @@ public class CartServiceTests {
     public void testGetCartTotal() {
         log.info("开始测试获取购物车总金额");
 
-        Long userId = 2L;
+        String userId = "2";
         BigDecimal total = cartService.getCartTotal(userId);
 
         assertNotNull(total, "总金额不应为null");

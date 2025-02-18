@@ -1,0 +1,9 @@
+# JWT Configuration
+# access token 过期时间（15分钟 = 15 * 60 * 1000 = 900000 毫秒）
+jwt.access-token-expiration=900000
+
+# refresh token 过期时间（7天 = 7 * 24 * 60 * 60 * 1000 = 604800000 毫秒）
+jwt.refresh-token-expiration=604800000
+
+# JWT 密钥（至少256位）
+jwt.secret=7zV2kLp9xRqYfE5tHwCnJ8sKmNbQ4jXrGvD3yAhUcF6W

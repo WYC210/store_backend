@@ -2,7 +2,6 @@ package com.wyc21.util;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -20,10 +19,10 @@ public class JwtUtil {
     private String secret;
 
     @Value("${jwt.access-token-expiration}")
-    private Long accessTokenExpiration; // 15分钟
+    private Long accessTokenExpiration;
 
     @Value("${jwt.refresh-token-expiration}")
-    private Long refreshTokenExpiration; // 7天
+    private Long refreshTokenExpiration;
 
     private final SecureRandom secureRandom = new SecureRandom();
 
@@ -31,42 +30,70 @@ public class JwtUtil {
         return Keys.hmacShaKeyFor(secret.getBytes());
     }
 
-    public String generateAccessToken(Long uid, String username, String ip, String ipLocation) {
-        return generateToken(uid, username, ip,  accessTokenExpiration);
-    }
-
-    public String generateRefreshToken(Long uid) {
-        byte[] randomBytes = new byte[32];
-        secureRandom.nextBytes(randomBytes);
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes);
-    }
-
-    private String generateToken(Long uid, String username, String ip, long expiration) {
-        
+    public String generateAccessToken(String userId, String username, String ip, String ipLocation) {
         Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + expiration);
-
-        Map<String, Object> claims = new HashMap<>();
-        claims.put("uid", uid);
-        claims.put("username", username);
+        Date expiryDate = new Date(now.getTime() + 900000); // 15分钟后过期
 
         return Jwts.builder()
-                .setClaims(claims)
-                .setIssuedAt(now)
-                .setExpiration(expiryDate)
-                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+                .subject(username)
+                .claim("uid", userId) // 使用String类型的userId
+                .claim("ip", ip)
+                .claim("location", ipLocation)
+                .issuedAt(now)
+                .expiration(expiryDate)
+                .signWith(getSigningKey())
+                .compact();
+    }
+
+    public String generateRefreshToken(String userId, String username) {
+        Date now = new Date();
+        Date expiryDate = new Date(now.getTime() + 604800000); // 7天后过期
+
+        return Jwts.builder()
+                .subject(username)
+                .claim("uid", userId) // 使用String类型的userId
+                .issuedAt(now)
+                .expiration(expiryDate)
+                .signWith(getSigningKey())
                 .compact();
     }
 
     public Claims validateToken(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(getSigningKey())
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
+        try {
+            return Jwts.parser()
+                    .verifyWith(getSigningKey())
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     public boolean isTokenExpired(Claims claims) {
         return claims.getExpiration().before(new Date());
+    }
+
+    public String generateToken(String username, Long userId) {
+        Date now = new Date();
+        Date expiryDate = new Date(now.getTime() + 900000); // 15分钟后过期
+
+        return Jwts.builder()
+                .subject(username)
+                .claim("uid", userId) // 添加用户ID到token中
+                .issuedAt(now)
+                .expiration(expiryDate)
+                .signWith(getSigningKey())
+                .compact();
+    }
+
+    // 从token中获取用户ID
+    public String getUserIdFromToken(String token) {
+        Claims claims = Jwts.parser()
+                .setSigningKey(getSigningKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+        return claims.get("uid", String.class); // 获取String类型的userId
     }
 }
