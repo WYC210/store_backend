@@ -30,7 +30,8 @@ INSERT INTO wz_id_generator (id_type, current_max_id, step, version) VALUES
 -- 2. 初始化用户数据
 INSERT INTO wz_users (uid, username, password, power, phone, email, gender, avatar, created_user, created_time) VALUES
 ('1', 'admin', '$2a$10$N.ZOn9G6/YLFixAOPMg/h.z7pCu6v2XyFDtC4q.jeeGM/TEZhPy7i', 'admin', '13800138000', 'admin@example.com', 1, 'admin.jpg', 'system', NOW()),
-('2', 'test', '$2a$10$N.ZOn9G6/YLFixAOPMg/h.z7pCu6v2XyFDtC4q.jeeGM/TEZhPy7i', 'user', '13800138001', 'test@example.com', 0, 'default.jpg', 'system', NOW());
+('2', 'test', '$2a$10$N.ZOn9G6/YLFixAOPMg/h.z7pCu6v2XyFDtC4q.jeeGM/TEZhPy7i', 'user', '13800138001', 'test@example.com', 0, 'default.jpg', 'system', NOW()),
+('2', 'wz', '$$2a$10$L9Ncd3EhHBeUBRyC4kN6t.ZMdWulVpwU38DF4R0n.q.ExZaSxLHTy', 'user', '6666666666', 'wz@example.com', 0, 'default.jpg', 'system', NOW());
 
 -- 3. 初始化分类数据（使用事务确保数据一致性）
 START TRANSACTION;
@@ -53,14 +54,14 @@ COMMIT;
 -- 4. 初始化商品数据
 INSERT INTO wz_products (product_id, name, description, price, stock, category_id, brand, tags, rating, review_count, image_url, is_active, created_user, created_time) VALUES
 ('1', 'iPhone 14', '最新款iPhone手机', 6999.00, 100, '11', 'Apple', 'phone,apple', 4.5, 100, '/images/iphone14.jpeg', 1, 'system', NOW()),
-('2', 'MacBook Pro', '专业级笔记本电脑', 12999.00, 50, '12', 'Apple', 'laptop,apple', 4.8, 50, '/images/macbookpro.jpeg', 1, 'system', NOW()),
-('3', 'Huawei P50', '华为旗舰手机', 5999.00, 80, '11', 'Huawei', 'phone,huawei', 4.6, 80, '/images/huawei-p50.jpeg', 1, 'system', NOW());
+('2', 'MacBook Pro', '专业级笔记本电脑', 12999.00, 50, '12', 'Apple', 'laptop,apple', 4.8, 50, '/images/macbook.jpeg', 1, 'system', NOW()),
+('3', 'Huawei P50', '华为旗舰手机', 5999.00, 80, '11', 'Huawei', 'phone,huawei', 4.6, 80, '/images/huawei.jpeg', 1, 'system', NOW());
 
 -- 5. 初始化商品图片数据
 INSERT INTO wz_product_images (image_id, product_id, image_url, is_primary, created_user) VALUES
 ('1', '1', '/images/iphone14.jpeg', 1, 'system'),
-('2', '1', '/images/iphone14.jpeg', 0, 'system'),
-('3', '2', '/images/macbook.jpeg', 1, 'system');
+('2', '2', '/images/macbook.jpeg', 1, 'system'),
+('3', '3', '/images/huawei.jpeg', 1, 'system');
 
 -- 6. 初始化购物车数据
 INSERT INTO wz_carts (cart_id, user_id, created_user, created_time) VALUES
