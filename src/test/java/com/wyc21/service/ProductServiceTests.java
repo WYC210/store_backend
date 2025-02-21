@@ -42,7 +42,7 @@ public class ProductServiceTests {
     public void testGetProductsWithoutFilters() {
         log.info("测试：获取商品列表 - 无筛选条件");
 
-        PageResult<Product> result = productService.getProducts(null, null, 1, 10,null);
+        PageResult<Product> result = productService.getProducts(null, null, 1, 10, null);
 
         // 基本验证
         assertNotNull(result, "返回结果不应为空");
@@ -70,7 +70,7 @@ public class ProductServiceTests {
         log.info("测试：获取商品列表 - 按分类筛选");
 
         Long categoryId = 1L; // 电子产品分类
-        PageResult<Product> result = productService.getProducts(categoryId, null, 1, 10,null);
+        PageResult<Product> result = productService.getProducts(categoryId, null, 1, 10, null);
 
         assertNotNull(result, "返回结果不应为空");
         assertFalse(result.getList().isEmpty(), "商品列表不应为空");
@@ -87,7 +87,7 @@ public class ProductServiceTests {
         log.info("测试：获取商品列表 - 关键词搜索");
 
         String keyword = "iPhone";
-        PageResult<Product> result = productService.getProducts(null, keyword, 1, 10,null);
+        PageResult<Product> result = productService.getProducts(null, keyword, 1, 10, null);
 
         assertNotNull(result, "返回结果不应为空");
         assertFalse(result.getList().isEmpty(), "搜索结果不应为空");
@@ -111,15 +111,54 @@ public class ProductServiceTests {
         log.info("测试：获取商品列表 - 无效的分页参数");
 
         // 测试页码为0
-        PageResult<Product> result1 = productService.getProducts(null, null, 0, 10,null);
+        PageResult<Product> result1 = productService.getProducts(null, null, 0, 10, null);
         assertEquals(1, result1.getPageNum(), "无效页码应被修正为1");
 
         // 测试页大小为0
-        PageResult<Product> result2 = productService.getProducts(null, null, 1, 0,null);
+        PageResult<Product> result2 = productService.getProducts(null, null, 1, 0, null);
         assertTrue(result2.getPageSize() > 0, "无效页大小应被修正为正数");
 
         // 测试超大页码
-        PageResult<Product> result3 = productService.getProducts(null, null, 999, 10,null);
+        PageResult<Product> result3 = productService.getProducts(null, null, 999, 10, null);
         assertTrue(result3.getList().isEmpty(), "超出范围的页码应返回空列表");
+    }
+
+    @Test
+    public void testPublishProduct() {
+        log.info("测试：发布商品");
+
+        Product product = new Product();
+        product.setName("新商品");
+        product.setPrice(new BigDecimal("199.99"));
+        product.setStock(50);
+        product.setDescription("这是一个新发布的商品");
+        product.setImageUrl("/images/new_product.jpg");
+
+        // 调用发布商品的方法
+        productService.publishProduct(product);
+
+        // 验证商品是否成功插入
+        Product insertedProduct = productMapper.findById(product.getProductId());
+        assertNotNull(insertedProduct, "商品应成功插入数据库");
+        assertEquals("新商品", insertedProduct.getName(), "商品名称应匹配");
+        assertEquals(199.99, insertedProduct.getPrice().doubleValue(), "商品价格应匹配");
+        assertEquals(50, insertedProduct.getStock(), "商品库存应匹配");
+    }
+
+    @Test
+    public void testPublishProduct_NullProduct() {
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+            productService.publishProduct(null);
+        });
+        assertEquals("商品信息不能为空", exception.getMessage());
+    }
+
+    @Test
+    public void testPublishProduct_InvalidProduct() {
+        Product product = new Product();
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+            productService.publishProduct(product);
+        });
+        assertEquals("商品名称、价格和库存不能为空", exception.getMessage());
     }
 }

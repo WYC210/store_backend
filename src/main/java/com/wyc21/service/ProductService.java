@@ -14,4 +14,9 @@ public interface ProductService {
 
     // 获取商品评论
     List<ProductReview> getProductReviews(Long productId, int limit);
+
+    /**
+     * 发布商品
+     */
+    void publishProduct(Product product);
 }

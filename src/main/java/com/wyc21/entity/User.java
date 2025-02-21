@@ -19,5 +19,6 @@ public class User extends BaseEntity implements Serializable {
     private LocalDateTime createdTime;
     private String modifiedUser;
     private LocalDateTime modifiedTime;
-    private String token; // 用于存储JWT token
+    private String accessToken; // 用于存储访问令牌
+    private String refreshToken; // 用于存储刷新令牌
 }

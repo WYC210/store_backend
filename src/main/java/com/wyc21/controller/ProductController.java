@@ -100,4 +100,10 @@ public class ProductController extends BaseController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
     }
+
+    @PostMapping("/publish")
+    public JsonResult<Void> publishProduct(@RequestBody Product product) {
+        productService.publishProduct(product);
+        return new JsonResult<>(OK, null, "商品发布成功");
+    }
 }

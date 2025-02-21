@@ -105,29 +105,32 @@ public class UserServiceImpl implements IUserService {
         String ip = ipUtil.getIpAddress(request);
         String ipLocation = ipUtil.getIpLocation(ip);
 
-        // 生成token
-        String token = jwtUtil.generateAccessToken(
-                result.getUid(), // 现在是String类型
+        // 生成访问令牌和刷新令牌
+        String accessToken = jwtUtil.generateAccessToken(
+                result.getUid(),
                 result.getUsername(),
                 ip,
                 ipLocation);
 
-        // 存储到Redis，设置5分钟过期
-        String redisKey = "token:" + result.getUid();
-        redisUtil.setToken(redisKey, token, 5 * 60 * 1000L);
+        String refreshToken = jwtUtil.generateRefreshToken(
+                result.getUid(),
+                result.getUsername());
 
-        // 设置HttpOnly Cookie
-        cookieUtil.setTokenCookie(response, token);
+        // 存储访问令牌到Redis，设置15分钟过期
+        String accessTokenKey = "access_token:" + result.getUid();
+        redisUtil.setToken(accessTokenKey, accessToken, 15 * 60 * 1000L);
 
-        // 存储IP信息，设置7天过期
-        redisUtil.setToken("ip:" + result.getUid(), ip + "|" + ipLocation, 7 * 24 * 60 * 60 * 1000L);
+        // 存储刷新令牌到Redis，设置7天过期
+        String refreshTokenKey = "refresh_token:" + result.getUid();
+        redisUtil.setToken(refreshTokenKey, refreshToken, 7 * 24 * 60 * 60 * 1000L);
 
         // 设置返回的用户对象
         User user = new User();
         user.setUid(result.getUid());
         user.setUsername(result.getUsername());
         user.setAvatar(result.getAvatar());
-        user.setToken("Bearer " + token);
+        user.setAccessToken(accessToken);
+        user.setRefreshToken(refreshToken);
         user.setPhone(result.getPhone());
         user.setEmail(result.getEmail());
         user.setGender(result.getGender());

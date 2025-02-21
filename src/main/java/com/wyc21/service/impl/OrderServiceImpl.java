@@ -108,7 +108,7 @@ public class OrderServiceImpl implements IOrderService {
         if (user == null) {
             throw new UserNotFoundException("用户不存在");
         }
-
+        
         // 获取购物车商品
         List<CartItem> cartItems = cartService.getCartItemsByIds(userId, cartItemIds);
         if (cartItems.isEmpty()) {
@@ -118,10 +118,10 @@ public class OrderServiceImpl implements IOrderService {
         // 创建订单
         Order order = createOrderFromItems(userId, cartItems);
 
-        // 从购物车中删除已购买的商品
-        for (String cartItemId : cartItemIds) {
-            cartService.deleteCartItem(userId, cartItemId);
-        }
+        // // 从购物车中删除已购买的商品
+        // for (String cartItemId : cartItemIds) {
+        //     cartService.deleteCartItem(userId, cartItemId);
+        // }
 
         return order;
     }
@@ -526,7 +526,7 @@ public class OrderServiceImpl implements IOrderService {
         String username = userMapper.findByUid(userId).getUsername();
         order.setCreatedUser(username);
         order.setModifiedUser(username);
-
+       
         // 保存订单
         orderMapper.insert(order);
 
@@ -536,7 +536,7 @@ public class OrderServiceImpl implements IOrderService {
             orderItem.setOrderItemId(idGenerator.nextId().toString());
             orderItem.setOrderId(orderId);
             orderItem.setProductId(item.getProductId());
-            orderItem.setQuantity(item.getQuantity());
+            orderItem.setQuantity(item.getQuantity() - item.getPaidQuantity());
             orderItem.setPrice(item.getPrice());
             orderItem.setProductName(item.getProductName());
             orderItem.setCreatedUser(username);

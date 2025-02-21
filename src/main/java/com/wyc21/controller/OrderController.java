@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import java.util.Collections;
 import lombok.Data;
+import java.util.ArrayList;
 
 @Slf4j
 @RestController
@@ -192,7 +193,7 @@ public class OrderController extends BaseController {
     }
 
     /**
-     * 购物车商品结算
+     * 购物车中选中的多个或单个商品结算
      */
     @PostMapping("/purchase/cart")
     public JsonResult<Order> purchaseFromCart(@RequestBody CartPurchaseRequest request,
@@ -200,6 +201,7 @@ public class OrderController extends BaseController {
         String userId = httpRequest.getAttribute("uid").toString();
         log.info("===== 购物车结算请求开始 =====");
         log.info("用户ID: {}", userId);
+        log.info("购物车项ID2233: {}", request.getCartItemIds());
 
         try {
             Order order = orderService.createOrderFromCart(userId, request.getCartItemIds());

@@ -25,8 +25,8 @@ public class UserController extends BaseController {
     @Autowired
     private CookieUtil cookieUtil;
 
-    @PostMapping("/reg")
-    public JsonResult<Void> reg(@RequestBody User user) {
+    @PostMapping("/register")
+    public JsonResult<Void> register(@RequestBody User user) {
         // 参数验证
         if (user.getUsername() == null || user.getUsername().trim().isEmpty()) {
             return new JsonResult<>(400, null, "用户名不能为空");
@@ -59,17 +59,7 @@ public class UserController extends BaseController {
         User data = userService.login(user.getUsername(), user.getPassword(), request, response);
 
         // 创建响应对象，只包含需要返回的信息
-        User responseUser = new User();
-        responseUser.setUid(data.getUid());
-        responseUser.setUsername(data.getUsername());
-        responseUser.setPower(data.getPower());
-        responseUser.setPhone(data.getPhone() != null ? data.getPhone() : ""); // 添加手机号
-        responseUser.setEmail(data.getEmail() != null ? data.getEmail() : ""); // 添加邮箱
-        responseUser.setGender(data.getGender() != null ? data.getGender() : 0); // 添加性别
-        responseUser.setAvatar(data.getAvatar());
-        responseUser.setToken(data.getToken());
-
-        return new JsonResult<>(OK, responseUser, "登录成功");
+        return new JsonResult<>(OK, data, "登录成功");
     }
 
     @PostMapping("/logout")

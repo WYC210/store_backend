@@ -45,4 +45,18 @@ public class ProductServiceImpl implements ProductService {
         // 调用 mapper 获取评论列表
         return productMapper.findReviewsByProductId(productId, limit);
     }
+
+    @Override
+    public void publishProduct(Product product) {
+        // 进行必要的验证
+        if (product == null) {
+            throw new IllegalArgumentException("商品信息不能为空");
+        }
+        if (product.getName() == null || product.getPrice() == null || product.getStock() == null) {
+            throw new IllegalArgumentException("商品名称、价格和库存不能为空");
+        }
+
+        // 插入商品到数据库
+        productMapper.insert(product);
+    }
 }

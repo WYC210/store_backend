@@ -33,7 +33,8 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(request -> {
                     CorsConfiguration config = new CorsConfiguration();
-                    config.setAllowedOrigins(Arrays.asList("http://localhost:8080"));
+                    config.setAllowedOrigins(Arrays.asList("http://localhost:8080","http://192.168.0.106:8080"));
+                    
                     config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
                     config.setAllowedHeaders(Arrays.asList("*"));
                     config.setExposedHeaders(Arrays.asList("*"));
@@ -46,7 +47,7 @@ public class SecurityConfig {
 
         http
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/users/login", "/users/register", "/users/reg", "/auth/login").permitAll()
+                        .requestMatchers("/users/login", "/users/register").permitAll()
                         .requestMatchers("/categories/**", "/products/**", "/error").permitAll()
                         .requestMatchers("/orders/**").authenticated()
                         .anyRequest().authenticated())

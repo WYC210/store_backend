@@ -40,6 +40,7 @@ import org.slf4j.LoggerFactory;
 import lombok.extern.slf4j.Slf4j;
 import lombok.Data;
 import java.util.stream.Collectors;
+import java.util.Objects;
 
 @Service
 @Slf4j
@@ -72,17 +73,23 @@ public class CartServiceImpl implements ICartService {
         // 获取用户的购物车商品
         List<CartItem> cartItems = cartMapper.findCartItems(userId);
 
-        // 过滤掉已支付的商品
-        List<CartItem> availableItems = cartItems.stream()
-            .filter(item -> item.getQuantity() > item.getPaidQuantity())
-            .collect(Collectors.toList());
+        // 过滤掉已支付的商品，并更新商品数量
+    List<CartItem> availableItems = cartItems.stream()
+        .map(item -> {
+            // 计算可用数量
+            int availableQuantity = item.getQuantity() - item.getPaidQuantity();
+            // 如果可用数量大于0，则更新商品数量
+            if (availableQuantity > 0) {
+                item.setQuantity(availableQuantity); // 更新商品数量
+                return item; // 返回更新后的商品
+            }
+            return null; // 如果可用数量为0，返回null
+        })
+        .filter(Objects::nonNull)
+        .collect(Collectors.toList());
 
-        // 如果没有可用商品，返回 null
-        if (availableItems.isEmpty()) {
-            return null; // 或者可以选择返回 Collections.emptyList()，根据需求决定
-        }
-
-        return availableItems;
+    // 如果没有可用商品，返回空列表
+    return availableItems;
     }
 
     @Override
@@ -310,8 +317,15 @@ public class CartServiceImpl implements ICartService {
         if (user == null) {
             throw new UserNotFoundException("用户不存在");
         }
+        // 获取该用户的所有购物车项
+        List<CartItem> allCartItems = cartMapper.findCartItemsByUserId(userId);
 
-        return cartMapper.findByIds(userId, cartItemIds);
+        // 筛选出需要的购物车项
+        List<CartItem> filteredCartItems = allCartItems.stream()
+                .filter(cartItem -> cartItemIds.contains(cartItem.getCartItemId()))
+                .collect(Collectors.toList());
+        
+        return filteredCartItems;
     }
 
     private void validateProduct(String productId, Integer quantity) {

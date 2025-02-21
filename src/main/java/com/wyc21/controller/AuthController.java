@@ -46,7 +46,7 @@ public class AuthController {
     @PostMapping("/refresh")
     public JsonResult<String> refreshToken(@RequestBody Map<String, String> request) {
         String refreshToken = request.get("refreshToken");
-        log.info("Received refresh token: {}", refreshToken);
+        log.info("Received我是续签token,续签的是哈哈哈-- refresh token: {}", refreshToken);
         if (refreshToken == null) {
             return new JsonResult<>(400, null, "Refresh token is required");
         }
