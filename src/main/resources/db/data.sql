@@ -31,7 +31,7 @@ INSERT INTO wz_id_generator (id_type, current_max_id, step, version) VALUES
 INSERT INTO wz_users (uid, username, password, power, phone, email, gender, avatar, created_user, created_time) VALUES
 ('1', 'admin', '$2a$10$N.ZOn9G6/YLFixAOPMg/h.z7pCu6v2XyFDtC4q.jeeGM/TEZhPy7i', 'admin', '13800138000', 'admin@example.com', 1, 'admin.jpg', 'system', NOW()),
 ('2', 'test', '$2a$10$N.ZOn9G6/YLFixAOPMg/h.z7pCu6v2XyFDtC4q.jeeGM/TEZhPy7i', 'user', '13800138001', 'test@example.com', 0, 'default.jpg', 'system', NOW()),
-('2', 'wz', '$$2a$10$L9Ncd3EhHBeUBRyC4kN6t.ZMdWulVpwU38DF4R0n.q.ExZaSxLHTy', 'user', '6666666666', 'wz@example.com', 0, 'default.jpg', 'system', NOW());
+('3', 'wz', '$2a$10$L9Ncd3EhHBeUBRyC4kN6t.ZMdWulVpwU38DF4R0n.q.ExZaSxLHTy', 'user', '6666666666', 'wz@example.com', 0, 'default.jpg', 'system', NOW());
 
 -- 3. 初始化分类数据（使用事务确保数据一致性）
 START TRANSACTION;
@@ -69,9 +69,9 @@ INSERT INTO wz_carts (cart_id, user_id, created_user, created_time) VALUES
 ('2', '2', 'system', NOW());
 
 -- 7. 初始化购物车项数据
-INSERT INTO wz_cart_items (cart_item_id, cart_id, product_id, quantity, price, product_name, created_user, created_time, is_pay) VALUES
-('1', '1', '1', 1, 6999.00, 'iPhone 14', 'system', NOW(), FALSE),
-('2', '1', '2', 1, 12999.00, 'MacBook Pro', 'system', NOW(), FALSE);
+INSERT INTO wz_cart_items (cart_item_id, cart_id, product_id, quantity, price, product_name, created_user, created_time, paid_quantity) VALUES
+('1', '1', '1', 1, 6999.00, 'iPhone 14', 'system', NOW(), 0),
+('2', '1', '2', 1, 12999.00, 'MacBook Pro', 'system', NOW(), 0);
 
 -- 8. 初始化订单数据
 INSERT INTO wz_orders (order_id, user_id, total_amount, status, payment_id, created_user, created_time) VALUES
