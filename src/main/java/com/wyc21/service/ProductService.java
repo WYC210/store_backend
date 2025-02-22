@@ -15,8 +15,12 @@ public interface ProductService {
     // 获取商品评论
     List<ProductReview> getProductReviews(Long productId, int limit);
 
-    /**
-     * 发布商品
-     */
-    void publishProduct(Product product);
+   
+    void createProduct(Product product);
+
+    // 更新商品信息
+    void updateProduct(Product product);
+
+    // 下架商品（将 is_active 设为 0）
+    void deactivateProduct(String productId);
 }

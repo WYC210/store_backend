@@ -101,9 +101,24 @@ public class ProductController extends BaseController {
         }
     }
 
-    @PostMapping("/publish")
-    public JsonResult<Void> publishProduct(@RequestBody Product product) {
-        productService.publishProduct(product);
-        return new JsonResult<>(OK, null, "商品发布成功");
+    // 上架商品
+    @PostMapping("/create")
+    public ResponseEntity<?> createProduct(@RequestBody Product product) {
+        productService.createProduct(product);
+        return ResponseEntity.ok("商品上架成功");
+    }
+
+    // 更新商品
+    @PutMapping("/update")
+    public ResponseEntity<?> updateProduct(@RequestBody Product product) {
+        productService.updateProduct(product);
+        return ResponseEntity.ok("商品更新成功");
+    }
+
+    // 下架商品
+    @PutMapping("/deactivate/{productId}")
+    public ResponseEntity<?> deactivateProduct(@PathVariable String productId) {
+        productService.deactivateProduct(productId);
+        return ResponseEntity.ok("商品已下架");
     }
 }

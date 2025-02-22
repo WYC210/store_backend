@@ -9,6 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.wyc21.mapper.ProductMapper;
 import java.util.List;
+import java.time.LocalDateTime;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Slf4j
@@ -47,16 +49,40 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public void publishProduct(Product product) {
-        // 进行必要的验证
-        if (product == null) {
-            throw new IllegalArgumentException("商品信息不能为空");
+    @Transactional
+    public void createProduct(Product product) {
+        // 校验必填字段
+        if (product.getProductId() == null || product.getName() == null ||
+                product.getPrice() == null || product.getStock() == null) {
+            throw new IllegalArgumentException("必填字段不能为空");
         }
-        if (product.getName() == null || product.getPrice() == null || product.getStock() == null) {
-            throw new IllegalArgumentException("商品名称、价格和库存不能为空");
-        }
+        // 设置默认值
+        product.setIsActive(1); // 默认上架
+        product.setCreatedTime(LocalDateTime.now());
+        productMapper.insertProduct(product);
+    }
 
-        // 插入商品到数据库
-        productMapper.insert(product);
+    @Override
+    @Transactional
+    public void updateProduct(Product product) {
+        // 校验商品是否存在
+        Product existingProduct = productMapper.findById(product.getProductId());
+        if (existingProduct == null) {
+            throw new RuntimeException("商品不存在");
+        }
+        // 更新修改时间和用户
+        product.setModifiedTime(LocalDateTime.now());
+        productMapper.updateProduct(product);
+    }
+
+    @Override
+    @Transactional
+    public void deactivateProduct(String productId) {
+        Product product = productMapper.findById(productId);
+        if (product == null) {
+            throw new RuntimeException("商品不存在");
+        }
+        product.setIsActive(0);
+        productMapper.updateProduct(product);
     }
 }

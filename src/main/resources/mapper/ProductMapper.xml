@@ -124,33 +124,11 @@
         LIMIT #{limit}
     </select>
 
-    <insert id="insert" parameterType="com.wyc21.entity.Product">
-        INSERT INTO wz_products (
-            product_id, name, description, price, 
-            stock, category_id, brand, image_url,
-            rating, review_count, is_active,
-            created_user, created_time, modified_time
-        ) VALUES (
-            #{productId}, #{name}, #{description}, #{price},
-            #{stock}, #{categoryId}, #{brand}, #{imageUrl},
-            #{rating}, #{reviewCount}, #{isActive},
-            #{createdUser}, #{createdTime}, #{modifiedTime}
-        )
-    </insert>
-    
-    <update id="update" parameterType="com.wyc21.entity.Product">
-        UPDATE wz_products
-        SET name = #{name},
-            description = #{description},
-            price = #{price},
-            stock = #{stock},
-            category_id = #{categoryId},
-            brand = #{brand},
-            image_url = #{imageUrl},
-            modified_time = NOW()
+    <delete id="deleteProduct" parameterType= "com.wyc21.entity.Product">
+        DELETE FROM wz_products
         WHERE product_id = #{productId}
-    </update>
-    
+    </delete>
+
     <update id="updateStock">
         UPDATE wz_products
         SET stock = #{stock},
@@ -192,4 +170,42 @@
         WHERE product_id = #{productId}
         ORDER BY is_primary DESC
     </select>
+    <!-- 插入商品 -->
+<insert id="insertProduct" parameterType="com.wyc21.entity.Product">
+    INSERT INTO wz_products (
+        product_id, name, price, stock, category_id,
+        description, brand, tags, rating, review_count,
+        image_url, is_active, created_user, created_time
+    ) VALUES (
+        #{productId}, #{name}, #{price}, #{stock}, #{categoryId},
+        #{description}, #{brand}, #{tags}, #{rating}, #{reviewCount},
+        #{imageUrl}, #{isActive}, #{createdUser}, #{createdTime}
+    )
+</insert>
+
+<!-- 更新商品（动态更新非空字段） -->
+<update id="updateProduct" parameterType="com.wyc21.entity.Product">
+    UPDATE wz_products
+    <set>
+        <if test="name != null">name = #{name},</if>
+        <if test="price != null">price = #{price},</if>
+        <if test="stock != null">stock = #{stock},</if>
+        <if test="categoryId != null">category_id = #{categoryId},</if>
+        <if test="description != null">description = #{description},</if>
+        <if test="brand != null">brand = #{brand},</if>
+        <if test="tags != null">tags = #{tags},</if>
+        <if test="rating != null">rating = #{rating},</if>
+        <if test="reviewCount != null">review_count = #{reviewCount},</if>
+        <if test="imageUrl != null">image_url = #{imageUrl},</if>
+        <if test="isActive != null">is_active = #{isActive},</if>
+        modified_user = #{modifiedUser},
+        modified_time = #{modifiedTime}
+    </set>
+    WHERE product_id = #{productId}
+</update>
+
+<!-- 查询商品详情 -->
+<select id="findProductById" resultType="com.wyc21.entity.Product">
+    SELECT * FROM wz_products WHERE product_id = #{productId}
+</select>
 </mapper> 

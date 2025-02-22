@@ -32,11 +32,11 @@ public interface ProductMapper {
         List<ProductReview> findReviewsByProductId(@Param("productId") Long productId,
                         @Param("limit") int limit);
 
-        // 添加商品
-        void insert(Product product);
+        void insertProduct(Product product);
 
-        // 更新商品
-        void update(Product product);
+        void updateProduct(Product product);
+
+        Product findProductById(String productId);
 
         // 更新商品库存
         void updateStock(@Param("productId") Long productId, @Param("stock") Integer stock);

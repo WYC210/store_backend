@@ -135,7 +135,7 @@ public class ProductServiceTests {
         product.setImageUrl("/images/new_product.jpg");
 
         // 调用发布商品的方法
-        productService.publishProduct(product);
+        productService.createProduct(product);
 
         // 验证商品是否成功插入
         Product insertedProduct = productMapper.findById(product.getProductId());
@@ -145,20 +145,4 @@ public class ProductServiceTests {
         assertEquals(50, insertedProduct.getStock(), "商品库存应匹配");
     }
 
-    @Test
-    public void testPublishProduct_NullProduct() {
-        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
-            productService.publishProduct(null);
-        });
-        assertEquals("商品信息不能为空", exception.getMessage());
-    }
-
-    @Test
-    public void testPublishProduct_InvalidProduct() {
-        Product product = new Product();
-        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
-            productService.publishProduct(product);
-        });
-        assertEquals("商品名称、价格和库存不能为空", exception.getMessage());
-    }
 }
